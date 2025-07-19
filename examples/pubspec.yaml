@@ -1,0 +1,9 @@
+name: equalone_example
+publish_to: none
+description: Examples demonstrating the use of the equalone package.
+version: 1.0.0
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  equalone:
+    path: ../
