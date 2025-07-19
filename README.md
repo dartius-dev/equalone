@@ -210,7 +210,7 @@ However, you can still use `Equalone` as a value in a `Set` or as a key in a `Ma
 
 ## More examples
 
-See the `/examples` folder for more comparison scenarios.
+See the `/example` folder for more comparison scenarios.
 
 ## License
 

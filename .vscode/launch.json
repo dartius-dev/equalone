@@ -8,7 +8,7 @@
             "name": "Run example",
             "request": "launch",
             "type": "dart",
-            "program": "examples/example.dart",
+            "program": "example/example.dart",
         }
     ]
 }
