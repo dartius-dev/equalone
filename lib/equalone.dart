@@ -301,8 +301,6 @@ class Equalone<T>  {
   ///
   ///
   ///
-
-  // TODO check how a not identical but equals List and Map works
   final T value;
   final TestEquals<Object>? equalsMethod;
   final bool ignoreType;
@@ -329,11 +327,3 @@ class Equalone<T>  {
     _ => value.hashCode,
   };
 }
-
-/*
-test:
-Equalone([1,2,3]) == Equalone([1,2,3]);
-Equalone([1,2,3]).hashCode == Equalone([1,2,3]).hashCode;
-Equalone<List?>([1,2,3]) == [1,2,3];
-Equalone<List?>(null) == null;
-*/
