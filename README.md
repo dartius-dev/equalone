@@ -1,6 +1,6 @@
 # EqualOne
 
-`equalone` is a Dart package for robust, deep, and customizable equality and hashCode logic for any value type, including collections and nested structures. It is especially useful for comparing complex objects, using them as keys in maps, or storing them in sets.
+`equalone` is a Dart utility package for deep equality, value-based comparison, and robust hashCode generation for any Dart object, including List, Map, Set, and nested collections. It solves common problems with object comparison, custom equality, and hashCode in Dart data classes, value objects, and collections. Use `equalone` to implement deep equality, shallow equality, and custom comparison logic for models, state objects, and when using objects as keys in Map or elements in Set. The package provides static methods, a wrapper class, and a mixin for easy integration with your Dart or Flutter projects.
 
 ## Features
 
