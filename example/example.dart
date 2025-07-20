@@ -39,9 +39,9 @@ void main() {
   );
 
   print("# Person comparison\n");
-  print("Person: ${PersonBad('Alice', [1,2,3]) == PersonBad('Alice', [1,2,3])}"); 
-  print("PersonEx: ${PersonShallow('Alice', [1,2,3]) == PersonShallow('Alice', [1,2,3])}"); 
-  print("PersonDeep: ${PersonDeep('Alice', [1,2,3]) == PersonDeep('Alice', [1,2,3])}"); 
+  print("Person: ${PersonBad('One', [1,2,3]) == PersonBad('One', [1,2,3])}"); 
+  print("PersonEx: ${PersonShallow('One', [1,2,3]) == PersonShallow('One', [1,2,3])}"); 
+  print("PersonDeep: ${PersonDeep('One', [1,2,3]) == PersonDeep('One', [1,2,3])}"); 
   print("");
 }
 

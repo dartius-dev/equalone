@@ -55,8 +55,8 @@ import 'package:collection/collection.dart';
 /// }
 ///
 /// void main() {
-///   final a = Person('Alice', [1, 2, 3]);
-///   final b = Person('Alice', [1, 2, 3]);
+///   final a = Person('One', [1, 2, 3]);
+///   final b = Person('One', [1, 2, 3]);
 ///   print(a == b); // true (deep equality for the list)
 /// }
 /// ```

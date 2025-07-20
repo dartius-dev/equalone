@@ -1,6 +1,6 @@
 name: equalone
 description: "A Dart package for deep equality checks and object comparison."
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/dartius-dev/equalone
 
 environment:
@@ -8,4 +8,7 @@ environment:
 dependencies:
   meta: ^1.17.0
   collection: ^1.19.1
+
+dev_dependencies:
+  test: ^1.25.2
 

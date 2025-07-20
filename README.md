@@ -72,10 +72,10 @@ Equalone.deepEquals({'x': [1, 2]}, {'x': [2, 1]});  // false
 Equalone.deepEquals([[1, 2], [3]], [[1, 2], [3]]);  // true
 ```
 
-You can control type sensitivity with the `ignoreType` parameter (default: `true`).
+You can control type sensitivity with the `ignoreType` parameter (default: `false`).
 ```dart
-Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3]);                    // true 
-Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false); // false 
+Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3]);                   // false 
+Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true); // true 
 ```
 
 ### `Equalone.shallowEquals(a, b)`
@@ -91,10 +91,10 @@ Equalone.shallowEquals({'x': [1, 2]}, {'x': [1, 2]});  // false (see deepEquals)
 Equalone.shallowEquals([[1, 2], [3]], [[1, 2], [3]]);  // false (see deepEquals)
 ```
 
-You can control type sensitivity with the `ignoreType` parameter (default: `true`).
+You can control type sensitivity with the `ignoreType` parameter (default: `false`).
 ```dart
-Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3]);                    // true 
-Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false); // false 
+Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3]);                    // false 
+Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true);  // true 
 ```
 
 ### Customization
@@ -341,9 +341,18 @@ print(map12.containsKey(Equalone([1, 2]))); // true
 print(map12.containsKey(Equalone([2, 1]))); // false
 ```
 
-## More examples
+
+## More examples and tests
 
 See the `/example` folder for more comparison scenarios.
+
+**Automated tests:**
+
+Explore the `/test` folder for a suite of automated tests covering features, edge cases, and caveats of `equalone`. 
+
+Experiment by adding tests for your own cases 
+
+By studying the example and tests, you'll gain a deeper and more practical understanding of how to use `equalone` effectively and safely in your own projects.
 
 ## License
 
