@@ -115,7 +115,7 @@ void main() {
     test('custom equalsMethod', () {
       bool sumEquals(Object? a, Object? b) => (a is List<num> && b is List<num>)
             ? (a.fold<num>(0, (num s, v) => s + v) == b.fold<num>(0, (num s, v) => s + v))
-            : Equalone.equals(a, b);
+            : false;
       final a = Equalone([1, 2, 3], equalsMethod: sumEquals);
       final b = Equalone([3, 3], equalsMethod: sumEquals);
       expect(a == b, isTrue);

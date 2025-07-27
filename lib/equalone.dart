@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
 import 'package:collection/collection.dart';
 
-
 /// {@template equalone_mixin}
 /// The [EqualoneMixin] provides a reusable, standardized way to implement value-based equality in Dart classes.
 ///
@@ -16,7 +15,7 @@ import 'package:collection/collection.dart';
 ///
 /// ### Usage
 /// 1. Add `with EqualoneMixin` to your class declaration.
-/// 2. Override the `equalones` getter to return a list of fields to compare. 
+/// 2. Override the `equalones` getter to return a list of fields to compare.
 ///    (Be careful with use of [List], [Map] or [Set] fields).
 /// 3. Do not override [==] or [hashCode] unless you need custom logic.
 ///
@@ -69,24 +68,24 @@ import 'package:collection/collection.dart';
 /// ### Notes
 /// - Always include all relevant fields in [equalones].
 /// - The mixin uses equality for collections via the `collection` package.
-/// 
+///
 /// ### Benefits
 /// - Reduces boilerplate code for equality checks.
 /// - Ensures consistent equality logic across your codebase.
 /// - Ability to use deep equality for collections and nested structures (via [Equalone]).
 /// - Makes it easy to create value objects that can be used in collections, maps, or as keys.
-/// 
+///
 /// {@endtemplate}
 mixin EqualoneMixin {
-
   List<Object?> get equalones;
 
   @override
   bool operator ==(Object other) {
     final equal = identical(this, other) ||
         other is EqualoneMixin &&
-        runtimeType == other.runtimeType &&
-        Equalone.shallowEquals(equalones, other.equalones); // do not use deepEquals
+            runtimeType == other.runtimeType &&
+            Equalone.shallowEquals(           // do not use deepEquals
+                equalones, other.equalones); 
 
     return equal;
   }
@@ -98,17 +97,16 @@ mixin EqualoneMixin {
 typedef TestEquals<T> = bool Function(T? a, T? b);
 typedef TestEmpty = bool Function(Object?);
 
-
 /// {@template equalone_class}
 /// ## Equalone
-/// The [Equalone] class is a value wrapper that provides deep, customizable equality 
+/// The [Equalone] class is a value wrapper that provides deep, customizable equality
 /// and [hashCode] logic for any value type.
 ///
 /// ### Purpose
-/// Use [Equalone] to wrap values (including collections) and gain robust, consistent 
+/// Use [Equalone] to wrap values (including collections) and gain robust, consistent
 /// equality and [hashCode] behavior.
-/// 
-/// This is especially useful for comparing complex objects, using them as keys in maps, 
+///
+/// This is especially useful for comparing complex objects, using them as keys in maps,
 /// or storing them in sets.
 ///
 /// ### Usage
@@ -120,21 +118,21 @@ typedef TestEmpty = bool Function(Object?);
 /// final b = Equalone([1, 2, 3]);
 /// print(a == b); // true (deep equality for lists)
 /// print(a.hashCode == b.hashCode); // true
-/// 
+///
 /// final c = Equalone({'x': 1, 'y': 2});
 /// final d = Equalone({'x': 1, 'y': 2});
 /// print(c == d); // true (deep equality for maps)
 /// ```
 ///
-/// You can even compare an [Equalone] instance with regular collections. 
-/// However, avoid comparing regular collections directly to [Equalone], 
+/// You can even compare an [Equalone] instance with regular collections.
+/// However, avoid comparing regular collections directly to [Equalone],
 /// as this may lead to unexpected or incorrect results:
 /// ```dart
 /// final e = Equalone([1, 2, 3]);
 /// final f = [1, 2, 3];
 /// print(e == f); // true (deep equality for lists)
 /// print(f == e); // false
-/// print(e.hashCode == f.hashCode); // false 
+/// print(e.hashCode == f.hashCode); // false
 /// ```
 /// ### Null comparison Caution
 /// `Null` comparison by `==` operator is working only with [Equalone] wrapper.
@@ -145,24 +143,24 @@ typedef TestEmpty = bool Function(Object?);
 /// final g = Equalone(null);
 /// final n = null;
 /// final h = Equalone(n);
-/// 
+///
 /// print(g == n); // false
 /// print(n == g); // false
 /// print(g == h); // true
 /// print(g.hashCode == n.hashCode); // true
 /// print(g.hashCode == h.hashCode); // true
 /// ```
-/// 
+///
 /// ### Customization
 /// The `Equalone` class provides customizable equality comparison for its instances.
-/// 
+///
 /// Features:
 /// - Use the `equalsMethod` to define a custom logic for comparing two instances of `Equalone`.
 ///   This allows you to override the default equality behavior and specify exactly how instances
 ///   should be considered equal.
 /// - The `ignoreType` option can be enabled to ignore the runtime type when comparing instances.
 ///   When set to `true`, two objects with the same properties but different types will be considered equal.
-/// 
+///
 /// Usage:
 /// - Set `equalsMethod` to a function that takes two objects and returns a boolean indicating equality.
 /// - Set `ignoreType` to `true` if you want to compare objects based on their properties only, regardless of their type.
@@ -177,12 +175,12 @@ typedef TestEmpty = bool Function(Object?);
 /// **Note:** When using the `==` operator, the order of operands matters.
 /// Comparing `EqualoneA == EqualoneB` may produce a different result than `EqualoneB == EqualoneA`.
 /// This is because the equality logic is determined by the left-hand operand.
-///  
+///
 /// ---
-/// 
+///
 /// ## Static Methods
 ///
-/// The static methods of [Equalone] provide a flexible and type-agnostic way to perform equality 
+/// The static methods of [Equalone] provide a flexible and type-agnostic way to perform equality
 /// and emptiness checks on any variables.
 ///
 /// - [Equalone.equals] — The function used for default equality checks ([deepEquals] by default).
@@ -192,7 +190,7 @@ typedef TestEmpty = bool Function(Object?);
 ///
 /// ### Usage
 /// These methods are especially convenient for working with collections and variables of
-/// unknown or dynamic types, where standard equality or emptiness checks may not be sufficient 
+/// unknown or dynamic types, where standard equality or emptiness checks may not be sufficient
 /// or reliable.
 ///
 /// The [Equalone.equals] method can be used to compare two objects for equality,
@@ -242,20 +240,19 @@ typedef TestEmpty = bool Function(Object?);
 ///
 /// {@endtemplate}
 @immutable
-class Equalone<T>  {
-
+class Equalone<T> {
   static bool Function(Object? a, Object? b) equals = deepEquals;
 
   static bool Function(Object? value) empty = defaultEmpty;
 
- static void initialize({
+  static void initialize({
     TestEquals<Object>? equals,
     TestEmpty? empty,
   }) {
     if (equals != null) Equalone.equals = equals;
     if (empty != null) Equalone.empty = empty;
   }
-  
+
   /// Performs a shallow (top-level) equality check between two objects.
   ///
   /// - For [List], [Map], [Set], and [Iterable], compares only the top-level elements (does not recurse into nested collections).
@@ -266,13 +263,15 @@ class Equalone<T>  {
   /// Use this for fast, top-level comparison where deep (recursive) equality is not required.
   static bool shallowEquals(Object? a, Object? b, {bool ignoreType = false}) {
     if (identical(a, b)) return true;
-    return (ignoreType || a.runtimeType == b.runtimeType) && switch(a){
-      final List list => const ListEquality().equals(list, b as List?),
-      final Map map => const MapEquality().equals(map, b as Map?),
-      final Set set => const SetEquality().equals(set, b as Set?),
-      final Iterable iterable => const IterableEquality().equals(iterable, b as Iterable?),
-      final obj => obj==b,
-    };
+    return (ignoreType || a.runtimeType == b.runtimeType) &&
+        switch (a) {
+          final List list => const ListEquality().equals(list, b as List?),
+          final Map map => const MapEquality().equals(map, b as Map?),
+          final Set set => const SetEquality().equals(set, b as Set?),
+          final Iterable iterable =>
+            const IterableEquality().equals(iterable, b as Iterable?),
+          final obj => obj == b,
+        };
   }
 
   /// Performs a deep (recursive) equality check between two objects.
@@ -285,18 +284,17 @@ class Equalone<T>  {
   /// Use this for thorough, recursive comparison of all nested elements.
   static bool deepEquals(Object? a, Object? b, {bool ignoreType = false}) {
     if (identical(a, b)) return true;
-    return (ignoreType || a.runtimeType == b.runtimeType) && const DeepCollectionEquality().equals(a, b);
+    return (ignoreType || a.runtimeType == b.runtimeType) &&
+        const DeepCollectionEquality().equals(a, b);
   }
 
-  static bool defaultEmpty(Object? value) => switch(value) {
-      null => true,
-      final String s => s.isEmpty,
-      final Iterable i => i.isEmpty,
-      final Equalone e => e.isEmpty,
-      _ => false
-  };
-
-
+  static bool defaultEmpty(Object? value) => switch (value) {
+        null => true,
+        final String s => s.isEmpty,
+        final Iterable i => i.isEmpty,
+        final Equalone e => e.isEmpty,
+        _ => false
+      };
 
   ///
   ///
@@ -305,25 +303,28 @@ class Equalone<T>  {
   final TestEquals<Object>? equalsMethod;
   final bool ignoreType;
 
-  const Equalone(this.value,{this.equalsMethod, this.ignoreType = true});
+  const Equalone(this.value, {this.equalsMethod, this.ignoreType = true});
 
-  bool get isEmpty  => empty(value); 
-  bool get isNotEmpty  => !isEmpty; 
+  bool get isEmpty => empty(value);
+  bool get isNotEmpty => !isEmpty;
 
   @override
   bool operator ==(Object other) {
     final Object? otherValue = other is Equalone ? other.value : other;
-    return equalsMethod!=null 
-      ? (ignoreType || otherValue is T) && equalsMethod!(value, otherValue)
-      : shallowEquals(value, otherValue, ignoreType: ignoreType);
+    return equalsMethod != null
+        ? (ignoreType || otherValue is T) && equalsMethod!(value, otherValue)
+        : shallowEquals(value, otherValue, ignoreType: ignoreType);
   }
 
   @override
-  int get hashCode => switch(value) {
-    final List list => Object.hash((ignoreType ? List : T).hashCode, list.length),
-    final Map map => Object.hash((ignoreType ? Map : T).hashCode, map.length),
-    final Set set => Object.hash((ignoreType ? Set : T).hashCode, set.length),
-    final Iterable _ => (ignoreType ? Iterable : T).hashCode,
-    _ => value.hashCode,
-  };
+  int get hashCode => switch (value) {
+        final List list =>
+          Object.hash((ignoreType ? List : T).hashCode, list.length),
+        final Map map =>
+          Object.hash((ignoreType ? Map : T).hashCode, map.length),
+        final Set set =>
+          Object.hash((ignoreType ? Set : T).hashCode, set.length),
+        final Iterable _ => (ignoreType ? Iterable : T).hashCode,
+        _ => value.hashCode,
+      };
 }

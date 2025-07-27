@@ -26,6 +26,16 @@ Import in your Dart code:
 import 'package:equalone/equalone.dart';
 ```
 
+`equalone` is built on top of the popular [`collection`](https://pub.dev/packages/collection) package for advanced equality and hashing.
+
+For convenience, you can access `collection` features via:
+```dart
+import 'package:equalone/collection.dart';
+```
+
+This simply re-exports the official `collection` package used be `equalone`.
+
+
 ## Usage
 
 You can use the `equalone` package in three main ways:
@@ -102,11 +112,37 @@ Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true);  // true
 You can globally override the equality and emptiness logic:
 
 ```dart
+import 'package:equalone/collection.dart';
+
 Equalone.initialize(
   equals: const DeepCollectionEquality().equals, // Type-insensitive deep equality
   empty: (v) => v is num ? v == 0 : Equalone.defaultEmpty(v),
 );
+
+print(Equalone.equals([1, 2, 3], <num>[1, 2, 3])); // true
+print(Equalone.equals([1, 2, 3], [3, 2, 1]));      // false
+
+print(Equalone.empty(0));    // true
+print(Equalone.empty(1));    // false
+print(Equalone.empty([]));   // true
+print(Equalone.empty(null)); // true
 ```
+
+
+Case-insensitive string comparison:
+
+```dart
+Equalone.initialize(
+  equals: (a, b) => a is String && b is String
+      ? a.toLowerCase() == b.toLowerCase()
+      : Equalone.deepEquals(a, b),
+);
+
+print(Equalone.equals('Hello', 'hello')); // true
+print(Equalone.equals('Hello', 'world')); // false
+```
+
+> Use `Equalone.initialize` to globally customize default comparison and emptiness logic to match requirements of your app.
 
 ## `Equalone` instances usage
 
@@ -129,6 +165,8 @@ print(c == d); // true (deep equality for maps)
 
 ### Comparing with regular collections
 
+You can even compare an `Equalone` instance with regular collections. However, avoid comparing regular collections directly to `Equalone`, as this may lead to unexpected or incorrect results
+
 ```dart
 final e = Equalone([1, 2, 3]);
 final f = [1, 2, 3];
@@ -138,6 +176,8 @@ print(f == e); // false
 ```
 
 ### Null comparison
+
+You cannot directly compare an `Equalone` instance with a regular `null` value. For consistent and correct results, always wrap `null` values in an `Equalone` instance before comparison.
 
 ```dart
 final g = Equalone(null);
@@ -154,8 +194,9 @@ print(null == g); // false
 You can provide a custom equality function via the `equalsMethod` parameter. For example, to compare lists by their sum:
 
 ```dart
-bool sumEquals(List? a, List? b) 
-    => (a?.fold(0, (s, v) => s + v) ?? 0) == (b?.fold(0, (s, v) => s + v) ?? 0);
+bool sumEquals(Object? a, Object? b) => (a is List<num> && b is List<num>)
+       ? (a.fold<num>(0, (num s, v) => s + v) == b.fold<num>(0, (num s, v) => s + v))
+       : false;
 
 final a = Equalone([1, 2, 3], equalsMethod: sumEquals);
 final b = Equalone([3, 3], equalsMethod: sumEquals);
@@ -345,8 +386,6 @@ print(map12.containsKey(Equalone([2, 1]))); // false
 ## More examples and tests
 
 See the `/example` folder for more comparison scenarios.
-
-**Automated tests:**
 
 Explore the `/test` folder for a suite of automated tests covering features, edge cases, and caveats of `equalone`. 
 

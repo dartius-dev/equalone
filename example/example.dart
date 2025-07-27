@@ -1,16 +1,9 @@
 import 'package:equalone/equalone.dart';
+import 'package:equalone/collection.dart';
 
 void main() {
-  print("# Emptiness checks\n");
-  print("0 is empty: ${Equalone.empty(0)}");
-  Equalone.initialize(
-    empty: (v) => switch(v) {num n => n == 0, _ => Equalone.defaultEmpty(v)},
-  );
-  print("0 is empty: ${Equalone.empty(0)}");
-  print("");
 
-
-  
+ 
   print("# Type dependent comparison checks\n");
   compare([
     Equalone<List>([1,2,3]),
@@ -43,6 +36,22 @@ void main() {
   print("PersonEx: ${PersonShallow('One', [1,2,3]) == PersonShallow('One', [1,2,3])}"); 
   print("PersonDeep: ${PersonDeep('One', [1,2,3]) == PersonDeep('One', [1,2,3])}"); 
   print("");
+
+  print("# Customization\ndefault:");
+  print(". 0 is empty: ${Equalone.empty(0)}");
+  print(". list equality: ${Equalone.equals(<num>[0], [0])}");
+  Equalone.initialize(
+    equals: const DeepCollectionEquality().equals, // Type-insensitive deep equality
+    empty: (v) => switch(v) {num n => n == 0, _ => Equalone.defaultEmpty(v)},
+  );
+  print("customized:");
+  print(". 0 is empty: ${Equalone.empty(0)}");
+  print(". list equality: ${Equalone.equals(<num>[0], [0])}");
+  print("");
+
+
+
+
 }
 
 ///
