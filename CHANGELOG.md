@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [1.0.1] - 2025-08-02
+### Changed
+- Updated README.md.
+
 ## [1.0.0] - 2025-08-02
 ### Changed
 - The default `equalsMethod` for `Equalone()` is now set to `deepEquals`.
