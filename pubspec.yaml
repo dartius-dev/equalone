@@ -1,9 +1,16 @@
 name: equalone
 description: "Deep equality, value comparison, and hashCode for any Dart object, collection, List, Map, Set, or data class."
-version: 0.1.0
+version: 1.0.0
 homepage: https://github.com/dartius-dev/equalone
 repository: https://github.com/dartius-dev/equalone
 issue_tracker: https://github.com/dartius-dev/equalone/issues
+
+topics:
+  - equality
+  - equals
+  - compare
+  - deep-equality
+  - collection
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -14,9 +21,4 @@ dependencies:
 dev_dependencies:
   test: ^1.25.2
 
-topics:
-  - equality
-  - deep-equality
-  - comparison
-  - value-object
-  - collection
+

@@ -3,55 +3,52 @@ import 'package:equalone/collection.dart';
 
 void main() {
 
- 
   print("# Type dependent comparison checks\n");
   compare([
-    Equalone<List>([1,2,3]),
-    Equalone<List?>([1,2,3]),
+    Equalone<List>([1, 2, 3]),
+    Equalone<List?>([1, 2, 3]),
     Equalone<List?>(null),
-    Equalone<List<int>>([1,2,3]),
-    Equalone<List<int>?>([1,2,3]),
-    Equalone<List<int?>?>([1,2,3]),
+    Equalone<List<int>>([1, 2, 3]),
+    Equalone<List<int>?>([1, 2, 3]),
+    Equalone<List<int?>?>([1, 2, 3]),
     Equalone<List<int?>?>(null),
     Equalone<List<int>?>(null),
-    <dynamic>[1,2,3],
-    <int>[1,2,3],
-    <int?>[1,2,3],
+    <dynamic>[1, 2, 3],
+    <int>[1, 2, 3],
+    <int?>[1, 2, 3],
     null,
-  ], 
-    name: typeName
-  );
-
+  ], name: typeName);
 
   print("# Value dependent comparison checks\n");
   compare([
-      Equalone([1]), Equalone(<num>[1]), Equalone(<num>[1], ignoreType: false),
-      Equalone([1,2]), Equalone([2,1]),
-    ], 
-    name: valueName
-  );
+    Equalone([1]),
+    Equalone(<num>[1]),
+    Equalone(<num>[1], ignoreType: false),
+    Equalone([1, 2]),
+    Equalone([2, 1]),
+  ], name: valueName);
 
   print("# Person comparison\n");
-  print("Person: ${PersonBad('One', [1,2,3]) == PersonBad('One', [1,2,3])}"); 
-  print("PersonEx: ${PersonShallow('One', [1,2,3]) == PersonShallow('One', [1,2,3])}"); 
-  print("PersonDeep: ${PersonDeep('One', [1,2,3]) == PersonDeep('One', [1,2,3])}"); 
+  print(
+      "Person: ${PersonBad('One', [1, 2, 3]) == PersonBad('One', [1, 2, 3])}");
+  print(
+      "PersonEx: ${PersonShallow('One', [1, 2, 3]) == PersonShallow('One', [1, 2, 3])}");
+  print(
+      "PersonDeep: ${PersonDeep('One', [1, 2, 3]) == PersonDeep('One', [1, 2, 3])}");
   print("");
 
   print("# Customization\ndefault:");
   print(". 0 is empty: ${Equalone.empty(0)}");
   print(". list equality: ${Equalone.equals(<num>[0], [0])}");
   Equalone.initialize(
-    equals: const DeepCollectionEquality().equals, // Type-insensitive deep equality
-    empty: (v) => switch(v) {num n => n == 0, _ => Equalone.defaultEmpty(v)},
+    equals:
+        const DeepCollectionEquality.unordered().equals, // Type-insensitive unordered deep equality
+    empty: (v) => switch (v) { num n => n == 0, _ => Equalone.defaultEmpty(v) },
   );
   print("customized:");
   print(". 0 is empty: ${Equalone.empty(0)}");
-  print(". list equality: ${Equalone.equals(<num>[0], [0])}");
+  print(". list equality: ${Equalone.equals(<num>[1,2], [2,1])}");
   print("");
-
-
-
-
 }
 
 ///
@@ -62,14 +59,13 @@ void compare(List values, {required String Function(Object?) name}) {
   print(' .---- [ operator == ]');
   print(' | .-- [ hashCode ]');
   print(' | | .-[ comparison ]');
-  for(int i=0; i<values.length; i++) {
-    for(int j=0; j<values.length; j++) {
+  for (int i = 0; i < values.length; i++) {
+    for (int j = 0; j < values.length; j++) {
       final a = values[i];
       final b = values[j];
       final results = [a == b, a.hashCode == b.hashCode];
       print(
-        ' ${results.map((r)=>r ?'+': '-').join(' ')} ${name(a)} == ${name(b)}'
-      );
+          ' ${results.map((r) => r ? '+' : '-').join(' ')} ${name(a)} == ${name(b)}');
     }
     print(i == values.length - 1 ? '' : ' | |');
   }
@@ -77,18 +73,18 @@ void compare(List values, {required String Function(Object?) name}) {
 
 String typeName(Object? obj) {
   if (obj == null) return 'null';
-  return "${obj.runtimeType.toString().replaceAll('<dynamic>', '')}${obj is Equalone && obj.value==null ? 'Null':''}";
+  return "${obj.runtimeType.toString().replaceAll('<dynamic>', '')}${obj is Equalone && obj.value == null ? 'Null' : ''}";
 }
+
 String valueName(Object? obj) {
-  final e =obj as Equalone;
-  final type = switch(e.value) {
-    List<int> _=> '<int>',
-    List<num> _=> '<num>',
-    _=> '',
+  final e = obj as Equalone;
+  final type = switch (e.value) {
+    List<int> _ => '<int>',
+    List<num> _ => '<num>',
+    _ => '',
   };
   return "$type[${e.value.join(',')}]${e.ignoreType ? '' : 'typed'}";
 }
-
 
 ///
 /// Bad comparison usage

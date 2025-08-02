@@ -84,8 +84,10 @@ mixin EqualoneMixin {
     final equal = identical(this, other) ||
         other is EqualoneMixin &&
             runtimeType == other.runtimeType &&
-            Equalone.shallowEquals(           // do not use deepEquals
-                equalones, other.equalones); 
+            Equalone.shallowEquals(
+                // do not use deepEquals
+                equalones,
+                other.equalones);
 
     return equal;
   }
@@ -159,11 +161,13 @@ typedef TestEmpty = bool Function(Object?);
 ///   This allows you to override the default equality behavior and specify exactly how instances
 ///   should be considered equal.
 /// - The `ignoreType` option can be enabled to ignore the runtime type when comparing instances.
-///   When set to `true`, two objects with the same properties but different types will be considered equal.
+///   - When set to `true`, two objects with the same properties but different types will be considered equal.
+///   - When set to `false`, two objects with the same properties and same type will be considered equal.
 ///
 /// Usage:
 /// - Set `equalsMethod` to a function that takes two objects and returns a boolean indicating equality.
-/// - Set `ignoreType` to `true` if you want to compare objects based on their properties only, regardless of their type.
+/// - Set `ignoreType` to `false` if you want to compare objects based on their properties and types.
+/// - Use `Equalone.shallow()` or `Equalone.deep()` to create instances with specific equality behavior.
 ///
 /// ### Customization Caution
 /// Comparing two [Equalone] instances with different settings (such as different `equalsMethod` or `ignoreType`)
@@ -258,10 +262,11 @@ class Equalone<T> {
   /// - For [List], [Map], [Set], and [Iterable], compares only the top-level elements (does not recurse into nested collections).
   /// - For non-collections, uses the standard `==` operator.
   /// - Returns true if both objects are identical.
-  /// - If [ignoreType] is true, skips runtime type checking and compares values directly (useful for comparing different but structurally similar types).
+  /// - If [ignoreType] is true (by default), skips runtime type checking and compares values directly (useful for comparing different but structurally similar types).
+  /// - If [ignoreType] is false, considers the runtime type of both objects and requires them to be the same for equality.
   ///
   /// Use this for fast, top-level comparison where deep (recursive) equality is not required.
-  static bool shallowEquals(Object? a, Object? b, {bool ignoreType = false}) {
+  static bool shallowEquals(Object? a, Object? b, {bool ignoreType = true}) {
     if (identical(a, b)) return true;
     return (ignoreType || a.runtimeType == b.runtimeType) &&
         switch (a) {
@@ -279,10 +284,11 @@ class Equalone<T> {
   /// - Uses [DeepCollectionEquality] from the `collection` package to compare all nested elements and collections.
   /// - Suitable for complex/nested data structures (e.g., nested [List], [Map], [Set], [Iterable]) where all levels must be checked for equality.
   /// - Returns true if both objects are identical or deeply equal.
-  /// - If [ignoreType] is true, skips runtime type checking and compares values deeply (useful for comparing different but structurally similar types).
+  /// - If [ignoreType] is true (by default), skips runtime type checking and compares values deeply (useful for comparing different but structurally similar types).
+  /// - If [ignoreType] is false, considers the runtime type of both objects and requires them to be the same for equality.
   ///
   /// Use this for thorough, recursive comparison of all nested elements.
-  static bool deepEquals(Object? a, Object? b, {bool ignoreType = false}) {
+  static bool deepEquals(Object? a, Object? b, {bool ignoreType = true}) {
     if (identical(a, b)) return true;
     return (ignoreType || a.runtimeType == b.runtimeType) &&
         const DeepCollectionEquality().equals(a, b);
@@ -304,6 +310,8 @@ class Equalone<T> {
   final bool ignoreType;
 
   const Equalone(this.value, {this.equalsMethod, this.ignoreType = true});
+  const Equalone.deep(this.value, {this.ignoreType = true}) : equalsMethod = deepEquals;
+  const Equalone.shallow(this.value, {this.ignoreType = true}) : equalsMethod = shallowEquals;
 
   bool get isEmpty => empty(value);
   bool get isNotEmpty => !isEmpty;
@@ -313,7 +321,7 @@ class Equalone<T> {
     final Object? otherValue = other is Equalone ? other.value : other;
     return equalsMethod != null
         ? (ignoreType || otherValue is T) && equalsMethod!(value, otherValue)
-        : shallowEquals(value, otherValue, ignoreType: ignoreType);
+        : deepEquals(value, otherValue, ignoreType: ignoreType);
   }
 
   @override

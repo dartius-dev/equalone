@@ -1,4 +1,3 @@
-import 'package:test/test.dart';
 import 'package:equalone/equalone.dart';
 
 void main() {
@@ -7,102 +6,85 @@ void main() {
       final a = Point(1, 2);
       final b = Point(1, 2);
       final c = Point(2, 1);
-      expect(a == b, isTrue);
-      expect(a == c, isFalse);
-      expect(a.hashCode, equals(b.hashCode));
+      assert(a == b);
+      assert(a != c);
+      assert(a.hashCode == b.hashCode);
     });
 
     test('deep equality for collections in mixin', () {
       final a = PersonDeep('One', [1, 2, 3]);
       final b = PersonDeep('One', [1, 2, 3]);
       final c = PersonDeep('One', [3, 2, 1]);
-      expect(a == b, isTrue);
-      expect(a == c, isFalse);
+      assert(a == b);
+      assert(a != c);
     });
 
     test('shallow equality for collections in mixin', () {
       final a = PersonShallow('One', [1, 2, 3]);
       final b = PersonShallow('One', [1, 2, 3]);
       final c = PersonShallow('One', [3, 2, 1]);
-      expect(a == b, isTrue);
-      expect(a == c, isFalse);
+      assert(a == b);
+      assert(a != c);
     });
 
     test('reference equality if not wrapped', () {
       final a = PersonRef('One', [1, 2, 3]);
       final b = PersonRef('One', [1, 2, 3]);
       final c = a;
-      expect(a == b, isFalse); // different list references
-      expect(a == c, isTrue); // same instance
+      assert(a != b); // different list references
+      assert(a == c); // same instance
     });
   });
+
   group('Equalone.empty', () {
     test('returns true for null, empty string, and empty list', () {
-      expect(Equalone.empty(null), isTrue);
-      expect(Equalone.empty(''), isTrue);
-      expect(Equalone.empty([]), isTrue);
+      assert(Equalone.empty(null));
+      assert(Equalone.empty(''));
+      assert(Equalone.empty([]));
     });
     test('returns false for non-empty values', () {
-      expect(Equalone.empty([1, 2, 3]), isFalse);
-      expect(Equalone.empty('hello'), isFalse);
+      assert(!Equalone.empty([1, 2, 3]));
+      assert(!Equalone.empty('hello'));
     });
   });
 
   group('Equalone.equals', () {
     test('deep equality for lists and maps', () {
-      expect(Equalone.equals([1, 2, 3], [1, 2, 3]), isTrue);
-      expect(Equalone.equals({'a': 1}, {'a': 1}), isTrue);
-      expect(Equalone.equals([1, 2, 3], [3, 2, 1]), isFalse);
+      assert(Equalone.equals([1, 2, 3], [1, 2, 3]));
+      assert(Equalone.equals({'a': 1}, {'a': 1}));
+      assert(!Equalone.equals([1, 2, 3], [3, 2, 1]));
     });
     test('null equality', () {
-      expect(Equalone.equals(null, null), isTrue);
-      expect(Equalone.equals(null, []), isFalse);
+      assert(Equalone.equals(null, null));
+      assert(!Equalone.equals(null, []));
     });
   });
 
   group('Equalone.deepEquals', () {
     test('deeply nested structures', () {
-      expect(
-          Equalone.deepEquals([1, [2, 3]], [1, [2, 3]]),
-          isTrue);  
-      expect(
-          Equalone.deepEquals([1, [2, 3]], [1, [3, 2]]),
-          isFalse);
-      expect(
-          Equalone.deepEquals({'x': [1, 2]}, {'x': [1, 2]}),
-          isTrue);
-      expect(
-          Equalone.deepEquals({'x': [1, 2]}, {'x': [1, 2]}),
-          isTrue);
-      expect(
-          Equalone.deepEquals({'x': [1, 2]}, {'x': [2, 1]}),
-          isFalse);
+      assert(Equalone.deepEquals([1, [2, 3]], [1, [2, 3]]));
+      assert(!Equalone.deepEquals([1, [2, 3]], [1, [3, 2]]));
+      assert(Equalone.deepEquals({'x': [1, 2]}, {'x': [1, 2]}));
+      assert(Equalone.deepEquals({'x': [1, 2]}, {'x': [1, 2]}));
+      assert(!Equalone.deepEquals({'x': [1, 2]}, {'x': [2, 1]}));
     });
     test('type sensitivity', () {
-      expect(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3]), 
-          isTrue);
-      expect(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true),
-          isTrue);
-      expect(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false),
-          isFalse);
+      assert(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3]));
+      assert(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true));
+      assert(!Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false));
     });
   });
 
   group('Equalone.shallowEquals', () {
     test('shallow comparison', () {
-      expect(Equalone.shallowEquals([1,[2, 3]], [1,[2, 3]]), isFalse);
-      expect(Equalone.shallowEquals([1, 2, 3], [1, 2, 3]), isTrue);
-      expect(Equalone.shallowEquals([1, 2, 3], [3, 2, 1]), isFalse);
+      assert(!Equalone.shallowEquals([1, [2, 3]], [1, [2, 3]]));
+      assert(Equalone.shallowEquals([1, 2, 3], [1, 2, 3]));
+      assert(!Equalone.shallowEquals([1, 2, 3], [3, 2, 1]));
     });
     test('type sensitivity', () {
-      expect(Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3]), 
-          isTrue);
-      expect(
-          Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true),
-          isTrue);
-      expect(
-          Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false),
-          isFalse);
+      assert(Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3]));
+      assert(Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true));
+      assert(!Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false));
     });
   });
 
@@ -110,24 +92,24 @@ void main() {
     test('== and hashCode for lists', () {
       final a = Equalone([1, 2, 3]);
       final b = Equalone([1, 2, 3]);
-      expect(a == b, isTrue);
-      expect(a.hashCode, equals(b.hashCode));
+      assert(a == b);
+      assert(a.hashCode == b.hashCode);
     });
     test('== and hashCode for maps', () {
       final a = Equalone({'x': 1, 'y': 2});
       final b = Equalone({'x': 1, 'y': 2});
-      expect(a == b, isTrue);
-      expect(a.hashCode, equals(b.hashCode));
+      assert(a == b);
+      assert(a.hashCode == b.hashCode);
     });
     test('type sensitivity in wrapper', () {
       final a = Equalone([1, 2, 3], ignoreType: true);
       final b = Equalone(<num>[1, 2, 3], ignoreType: false);
-      expect(a == b, isTrue); // ignores type differences
-      expect(b == a, isFalse); // type differences matter for b
+      assert(a == b); // ignores type differences
+      assert(b != a); // type differences matter for b
       final c = Equalone([1, 2, 3], ignoreType: true);
       final d = Equalone(<num>[1, 2, 3], ignoreType: true);
-      expect(c == d, isTrue);
-      expect(d == c, isTrue);
+      assert(c == d);
+      assert(d == c);
     });
     test('custom equalsMethod', () {
       bool sumEquals(Object? a, Object? b) => (a is List<num> && b is List<num>)
@@ -136,10 +118,14 @@ void main() {
           : false;
       final a = Equalone([1, 2, 3], equalsMethod: sumEquals);
       final b = Equalone([3, 3], equalsMethod: sumEquals);
-      expect(a == b, isTrue);
+      assert(a == b);
     });
   });
+
+  print('All assertions passed!');
 }
+
+// --- Test classes ---
 
 class Point with EqualoneMixin {
   final int x;
@@ -170,5 +156,26 @@ class PersonRef with EqualoneMixin {
   final List<int> scores;
   PersonRef(this.name, this.scores);
   @override
-  List<Object?> get equalones => [name, scores]; // Not wrapped
+  List<Object?> get equalones => [name, scores];  // Not wrapped
+}
+
+// --- Simple group/test emulation for console ---
+
+typedef VoidCallback = void Function();
+
+void group(String name, VoidCallback body) {
+  print('\n== $name ==');
+  body();
+}
+
+void test(String name, VoidCallback body) {
+  try {
+    body();
+    print('  [PASS] $name');
+  } catch (e, st) {
+    print('  [FAIL] $name');
+    print('    $e');
+    print('    $st');
+    rethrow;
+  }
 }
