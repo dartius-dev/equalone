@@ -1,90 +1,166 @@
 import 'package:equalone/equalone.dart';
+import '../example/example.lib.dart';
+
 
 void main() {
-  group('EqualoneMixin in custom classes', () {
-    test('simple value-based equality', () {
-      final a = Point(1, 2);
-      final b = Point(1, 2);
-      final c = Point(2, 1);
-      assert(a == b);
-      assert(a != c);
-      assert(a.hashCode == b.hashCode);
-    });
-
-    test('deep equality for collections in mixin', () {
-      final a = PersonDeep('One', [1, 2, 3]);
-      final b = PersonDeep('One', [1, 2, 3]);
-      final c = PersonDeep('One', [3, 2, 1]);
-      assert(a == b);
-      assert(a != c);
-    });
-
-    test('shallow equality for collections in mixin', () {
-      final a = PersonShallow('One', [1, 2, 3]);
-      final b = PersonShallow('One', [1, 2, 3]);
-      final c = PersonShallow('One', [3, 2, 1]);
-      assert(a == b);
-      assert(a != c);
-    });
-
-    test('reference equality if not wrapped', () {
-      final a = PersonRef('One', [1, 2, 3]);
-      final b = PersonRef('One', [1, 2, 3]);
-      final c = a;
-      assert(a != b); // different list references
-      assert(a == c); // same instance
-    });
-  });
-
   group('Equalone.empty', () {
-    test('returns true for null, empty string, and empty list', () {
+    test('empty values', () {
       assert(Equalone.empty(null));
       assert(Equalone.empty(''));
       assert(Equalone.empty([]));
+      assert(Equalone.empty({}));
+      assert(Equalone.empty(<String, dynamic>{}));
+      assert(Equalone.empty(Iterable.generate(0)));
     });
-    test('returns false for non-empty values', () {
+    test('non-empty values', () {
+      assert(!Equalone.empty([null]));
       assert(!Equalone.empty([1, 2, 3]));
       assert(!Equalone.empty('hello'));
-    });
-  });
-
-  group('Equalone.equals', () {
-    test('deep equality for lists and maps', () {
-      assert(Equalone.equals([1, 2, 3], [1, 2, 3]));
-      assert(Equalone.equals({'a': 1}, {'a': 1}));
-      assert(!Equalone.equals([1, 2, 3], [3, 2, 1]));
-    });
-    test('null equality', () {
-      assert(Equalone.equals(null, null));
-      assert(!Equalone.equals(null, []));
-    });
-  });
-
-  group('Equalone.deepEquals', () {
-    test('deeply nested structures', () {
-      assert(Equalone.deepEquals([1, [2, 3]], [1, [2, 3]]));
-      assert(!Equalone.deepEquals([1, [2, 3]], [1, [3, 2]]));
-      assert(Equalone.deepEquals({'x': [1, 2]}, {'x': [1, 2]}));
-      assert(Equalone.deepEquals({'x': [1, 2]}, {'x': [1, 2]}));
-      assert(!Equalone.deepEquals({'x': [1, 2]}, {'x': [2, 1]}));
-    });
-    test('type sensitivity', () {
-      assert(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3]));
-      assert(Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true));
-      assert(!Equalone.deepEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false));
+      assert(!Equalone.empty(0));
+      assert(!Equalone.empty((0,1)));
+      assert(!Equalone.empty((a:null)));
+      assert(!Equalone.empty((null,null)));
+      assert(!Equalone.empty((a:0,b:1)));
     });
   });
 
   group('Equalone.shallowEquals', () {
-    test('shallow comparison', () {
-      assert(!Equalone.shallowEquals([1, [2, 3]], [1, [2, 3]]));
+    test('lists equality', () {
       assert(Equalone.shallowEquals([1, 2, 3], [1, 2, 3]));
+      assert(Equalone.shallowEquals([1, 2, 3], [1, 2, 3], ignoreType: false));
+
+      assert(Equalone.shallowEquals(<int>[1, 2, 3], <double>[1.0, 2.0, 3.0]));
+      assert(!Equalone.shallowEquals(<int>[1, 2, 3], <double>[1.0, 2.0, 3.0], ignoreType: false));
+
+      assert(Equalone.shallowEquals(<num>[1, 2.0, 3], <num>[1.0, 2, 3.0]));
+      assert(Equalone.shallowEquals(<num>[1, 2.0, 3], <num>[1.0, 2, 3.0], ignoreType: false));
+
+      assert(!Equalone.shallowEquals([1, 2, [3]], [1, 2, [3]]));
+      assert(!Equalone.shallowEquals([1, [2], {'a': 3}], [1, [2], {'a':3}]));
+      assert(!Equalone.shallowEquals([{1}, [2], {'a': 3}], [{1}, [2], {'a':3}]));
+      assert(!Equalone.shallowEquals([(1, 2), {'a': [3]}], [(1, 2), {'a':[3]}]));
+
       assert(!Equalone.shallowEquals([1, 2, 3], [3, 2, 1]));
+      assert(!Equalone.shallowEquals([1, 2], [1, 2, 3]));
+      assert(!Equalone.shallowEquals([1, 2, 3], {1, 2, 3}));
+      assert(!Equalone.shallowEquals([1, 2, 3], Iterable<int>.generate(3, (i) => i+1)));
     });
-    test('type sensitivity', () {
-      assert(Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3]));
-      assert(Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: true));
-      assert(!Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false));
+    test('sets equality', () {
+      assert(Equalone.shallowEquals({1, 2, 3}, {1, 2, 3}));
+      assert(Equalone.shallowEquals({1, 2, 3}, {3, 2, 1}));
+      assert(Equalone.shallowEquals(<int>{1, 2, 3}, <double>{1.0, 2.0, 3.0}, ignoreType: true));
+      assert(!Equalone.shallowEquals(<int>{1, 2, 3}, <double>{1.0, 2.0, 3.0}, ignoreType: false));
+
+      assert(Equalone.shallowEquals(<num>{1.0, 2, 3.0}, <num>{1, 2.0, 3}, ignoreType: true));
+      assert(Equalone.shallowEquals(<num>{1.0, 2, 3.0}, <num>{1, 2.0, 3}, ignoreType: false));
+
+      assert(Equalone.shallowEquals({1, 2.0, 3}, {1, 2.0, 3}, ignoreType: true));
+      assert(Equalone.shallowEquals({1, 2.0, 3}, {1, 2.0, 3}, ignoreType: false));
+      assert(Equalone.shallowEquals({1.0, 2, 3}, {1, 2.0, 3.0}, ignoreType: true));
+      assert(Equalone.shallowEquals({1.0, 2, 3}, {1, 2.0, 3.0}, ignoreType: false));
+
+      assert(Equalone.shallowEquals({(1, 2), 3}, {3, (1, 2)}));
+      assert(!Equalone.shallowEquals({(1, 2), {'a': [3]}}, {{'a':[3]}, (1, 2)}));
+      assert(!Equalone.shallowEquals({[1],[2,3]}, {[2,3],[1]}));
+    });
+    test('maps equality', () {
+      assert(Equalone.shallowEquals({'a': 1}, {'a': 1}));
+      assert(Equalone.shallowEquals({'a': 1}, {'a': 1.0}));
+      assert(Equalone.shallowEquals({'a': 1,'b':2}, {'b':2,'a':1}));
+
+      assert(Equalone.shallowEquals({'a': 1}, {'a': 1.0}, ignoreType: true));
+      assert(!Equalone.shallowEquals({'a': 1}, {'a': 1.0}, ignoreType: false));
+
+      assert(!Equalone.shallowEquals({'a': 1,'b':[2,3]}, {'b':[2,3],'a':1}));
+      assert(!Equalone.shallowEquals({'a': 1}, {'a': 2}));
+      assert(!Equalone.shallowEquals({'a': 1}, {'b': 1}));
+      assert(!Equalone.shallowEquals({'a': 1,'b':null}, {'a':1}));
+    });
+    test('records equality', () {
+      assert(Equalone.shallowEquals((1, 2), (1, 2)));
+      assert(Equalone.shallowEquals((a:1, b:2), (a:1, b:2)));
+      assert(Equalone.shallowEquals((a:1, b:2), (b:2, a:1)));
+      assert(!Equalone.shallowEquals((a:1, b:2), (1, 2)));
+      assert(!Equalone.shallowEquals((1, 2), (1, 2, 3)));
+
+      assert(Equalone.shallowEquals((1, 2), (1, 2.0), ignoreType: true));
+      assert(!Equalone.shallowEquals((1, 2), (1, 2.0), ignoreType: false));
+
+      assert(!Equalone.shallowEquals(({1}, [2]), ({1}, [2])));
+    });
+    test('null equality', () {
+      assert(Equalone.shallowEquals(null, null));
+      assert(!Equalone.shallowEquals(null, []));
+    });
+  });
+
+  group('Equalone.deepEquals', () {
+    test('lists equality', () {
+      assert(Equalone.deepEquals([1, 2, 3], [1, 2, 3]));
+      assert(Equalone.deepEquals([1, 2, 3], [1, 2, 3], ignoreType: false));
+
+      assert(Equalone.deepEquals(<int>[1, 2, 3], <double>[1.0, 2.0, 3.0]));
+      assert(!Equalone.deepEquals(<int>[1, 2, 3], <double>[1.0, 2.0, 3.0], ignoreType: false));
+
+      assert(Equalone.deepEquals(<num>[1, 2.0, 3], <num>[1.0, 2, 3.0]));
+      assert(Equalone.deepEquals(<num>[1, 2.0, 3], <num>[1.0, 2, 3.0], ignoreType: false));
+
+      assert(Equalone.deepEquals([1, 2, [3]], [1, 2, [3]]));
+      assert(Equalone.deepEquals([1, [2], {'a': 3}], [1, [2], {'a':3}]));
+      assert(Equalone.deepEquals([{1}, [2], {'a': 3}], [{1}, [2], {'a':3}]));
+      assert(Equalone.deepEquals([(1, 2), {'a': [3]}], [(1, 2), {'a':[3]}]));
+
+      assert(!Equalone.deepEquals([1, 2, 3], [3, 2, 1]));
+      assert(!Equalone.deepEquals([1, 2], [1, 2, 3]));
+      assert(!Equalone.deepEquals([1, 2, 3], {1, 2, 3}));
+      assert(!Equalone.deepEquals([1, 2, 3], Iterable<int>.generate(3, (i) => i+1)));
+    });
+    test('sets equality', () {
+      assert(Equalone.deepEquals({1, 2, 3}, {1, 2, 3}));
+      assert(Equalone.deepEquals({1, 2, 3}, {3, 2, 1}));
+      assert(Equalone.deepEquals(<int>{1, 2, 3}, <double>{1.0, 2.0, 3.0}));
+      assert(!Equalone.deepEquals(<int>{1, 2, 3}, <double>{1.0, 2.0, 3.0}, ignoreType: false));
+
+      assert(Equalone.deepEquals(<num>{1.0, 2, 3.0}, <num>{1, 2.0, 3}));
+      assert(Equalone.deepEquals(<num>{1.0, 2, 3.0}, <num>{1, 2.0, 3}, ignoreType: false));
+      
+      assert(Equalone.deepEquals({1, 2.0, [3]}, {1, 2.0, [3]}));
+      assert(Equalone.deepEquals({1, 2.0, [3]}, {1, 2.0, [3]}, ignoreType: false));
+      assert(Equalone.deepEquals({1.0, 2, [3]}, {1, 2.0, [3.0]}));
+      assert(Equalone.deepEquals({1.0, 2, [3]}, {1, 2.0, [3.0]}, ignoreType: false));
+
+      assert(Equalone.shallowEquals({(1, 2), 3}, {3, (1, 2)}));
+      assert(Equalone.deepEquals({(1, 2), {'a': [3]}}, {{'a':[3]}, (1, 2)}));
+      assert(Equalone.deepEquals({[1],[2,3]}, {[2,3],[1]}));
+    });
+    test('maps equality', () {
+      assert(Equalone.deepEquals({'a': 1}, {'a': 1}));
+      assert(Equalone.deepEquals({'a': 1}, {'a': 1.0}));
+      assert(Equalone.deepEquals({'a': 1,'b':2}, {'b':2,'a':1}));
+
+      assert(Equalone.deepEquals({'a': 1}, {'a': 1.0}, ignoreType: true));
+      assert(!Equalone.deepEquals({'a': 1}, {'a': 1.0}, ignoreType: false));
+
+      assert(Equalone.deepEquals({'a': 1,'b':[2,3]}, {'b':[2,3],'a':1}));
+      assert(!Equalone.deepEquals({'a': 1}, {'a': 2}));
+      assert(!Equalone.deepEquals({'a': 1}, {'b': 1}));
+      assert(!Equalone.deepEquals({'a': 1,'b':null}, {'a':1}));
+    });
+    test('records equality', () {
+      assert(Equalone.deepEquals((1, 2), (1, 2)));
+      assert(Equalone.deepEquals((a:1, b:2), (a:1, b:2)));
+      assert(Equalone.deepEquals((a:1, b:2), (b:2, a:1)));
+      assert(!Equalone.deepEquals((a:1, b:2), (1, 2)));
+      assert(!Equalone.deepEquals((1, 2), (1, 2, 3)));
+
+      assert(Equalone.deepEquals((1, 2), (1, 2.0), ignoreType: true));
+      assert(!Equalone.deepEquals((1, 2), (1, 2.0), ignoreType: false));
+
+      assert(!Equalone.deepEquals(({1}, [2]), ({1}, [2])));
+    });
+    test('null equality', () {
+      assert(Equalone.deepEquals(null, null));
+      assert(!Equalone.deepEquals(null, []));
     });
   });
 
@@ -92,14 +168,47 @@ void main() {
     test('== and hashCode for lists', () {
       final a = Equalone([1, 2, 3]);
       final b = Equalone([1, 2, 3]);
+      final c = Equalone([1, 3, 2]);
+      final d = Equalone([1.0, 2.0, 3.0]);
+      final e = Equalone([1.0, 2.0, 3.0], ignoreType: false);
+
       assert(a == b);
+      assert(a == [1, 2, 3]);
+      assert(a != c);
+      assert(a == d);
+      assert(a == e);
+      assert(e != a);
       assert(a.hashCode == b.hashCode);
+      assert(a.hashCode == c.hashCode);
+      assert(a.hashCode == d.hashCode);
+      assert(a.hashCode != [1, 2, 3].hashCode);
+      assert(a.hashCode != e.hashCode);
     });
     test('== and hashCode for maps', () {
       final a = Equalone({'x': 1, 'y': 2});
-      final b = Equalone({'x': 1, 'y': 2});
+      final b = Equalone({'y': 2, 'x': 1});
+      final c = Equalone({'x': 2, 'y': 1});
+      final d = Equalone({'x': 1.0, 'y': 2.0}, ignoreType: false);
+
       assert(a == b);
+      assert(a == {'x': 1, 'y': 2});
+      assert(a != c);
+      assert(a == d);
+      assert(d != a);
+
       assert(a.hashCode == b.hashCode);
+      assert(a.hashCode == c.hashCode);
+      assert(a.hashCode != d.hashCode);
+      assert(a.hashCode != {'x': 1, 'y': 2}.hashCode);
+    });
+    test('== and hashCode for records', () {
+      final a = Equalone((1, 2, 3));
+      final b = Equalone((1.0, 2.0, 3.0), ignoreType: false);
+      assert(a == b);
+      assert(a == (1, 2, 3));
+      assert(b != a);
+      assert(a.hashCode == b.hashCode);
+      assert(a.hashCode == (1,2,3).hashCode);
     });
     test('type sensitivity in wrapper', () {
       final a = Equalone([1, 2, 3], ignoreType: true);
@@ -113,8 +222,7 @@ void main() {
     });
     test('custom equalsMethod', () {
       bool sumEquals(Object? a, Object? b) => (a is List<num> && b is List<num>)
-          ? (a.fold<num>(0, (num s, v) => s + v) ==
-              b.fold<num>(0, (num s, v) => s + v))
+          ? (a.fold<num>(0, (num s, v) => s + v) == b.fold<num>(0, (num s, v) => s + v))
           : false;
       final a = Equalone([1, 2, 3], equalsMethod: sumEquals);
       final b = Equalone([3, 3], equalsMethod: sumEquals);
@@ -122,44 +230,43 @@ void main() {
     });
   });
 
-  print('All assertions passed!');
+  group('EqualoneMixin in custom classes', () {
+    test('simple value-based equality', () {
+      final a = Point(1, 2);
+      final b = Point(1, 2);
+      final c = Point(2, 1);
+      assert(a == b);
+      assert(a != c);
+      assert(a.hashCode == b.hashCode);
+    });
+    test('reference equality if not wrapped', () {
+      final a = PersonRef('One', [1, 2, 3]);
+      final b = PersonRef('One', [1, 2, 3]);
+      final c = PersonRef('One', a.scores);
+      assert(a != b); // different list references
+      assert(a == c); // same instance
+    });
+
+    test('shallow equality for collections in mixin', () {
+      final a = PersonShallow('One', [1, 2, 3]);
+      final b = PersonShallow('One', [1, 2, 3]);
+      final c = PersonShallow('One', [3, 2, 1]);
+      assert(a == b);
+      assert(a != c);
+    });
+
+    test('deep equality for collections in mixin', () {
+      final a = PersonDeep('One', [1, 2, 3]);
+      final b = PersonDeep('One', [1, 2, 3]);
+      final c = PersonDeep('One', [3, 2, 1]);
+      assert(a == b);
+      assert(a != c);
+    });
+  });
+
+  print('\nAll assertions passed!');
 }
 
-// --- Test classes ---
-
-class Point with EqualoneMixin {
-  final int x;
-  final int y;
-  Point(this.x, this.y);
-  @override
-  List<Object?> get equalones => [x, y];
-}
-
-class PersonDeep with EqualoneMixin {
-  final String name;
-  final List<int> scores;
-  PersonDeep(this.name, this.scores);
-  @override
-  List<Object?> get equalones => [name, Equalone(scores)];
-}
-
-class PersonShallow with EqualoneMixin {
-  final String name;
-  final List<int> scores;
-  PersonShallow(this.name, this.scores);
-  @override
-  List<Object?> get equalones => [name, ...scores];
-}
-
-class PersonRef with EqualoneMixin {
-  final String name;
-  final List<int> scores;
-  PersonRef(this.name, this.scores);
-  @override
-  List<Object?> get equalones => [name, scores];  // Not wrapped
-}
-
-// --- Simple group/test emulation for console ---
 
 typedef VoidCallback = void Function();
 

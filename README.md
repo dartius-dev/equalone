@@ -66,23 +66,32 @@ And that's not ALL! Keep reading...
 - [Contents](#contents)
   - [Getting started](#getting-started)
   - [Usage](#usage)
-  - [Static methods usage](#static-methods-usage)
+  - [Using Static methods](#using-static-methods)
     - [`Equalone.empty(value)`](#equaloneemptyvalue)
     - [`Equalone.equals(a, b)`](#equaloneequalsa-b)
     - [`Equalone.deepEquals(a, b)`](#equalonedeepequalsa-b)
     - [`Equalone.shallowEquals(a, b)`](#equaloneshallowequalsa-b)
+    - [deepEquals vs shallowEquals](#deepequals-vs-shallowequals)
     - [Customization](#customization)
-  - [`Equalone` instances usage](#equalone-instances-usage)
+  - [Using `Equalone` wrapper](#using-equalone-wrapper)
     - [Deep equality for collections](#deep-equality-for-collections)
     - [Comparing with regular collections](#comparing-with-regular-collections)
     - [Null comparison](#null-comparison)
-    - [Custom equality](#custom-equality)
     - [Type sensitivity](#type-sensitivity)
+    - [Custom equality](#custom-equality)
+    - [Custom `hashCode`](#custom-hashcode)
+  - [Extending `Equalone`](#extending-equalone)
+    - [Customizing methods](#customizing-methods)
+    - [Overriding Methods](#overriding-methods)
+    - [Using an `Equalone` instance as a function](#using-an-equalone-instance-as-a-function)
+    - [Using `PayloadEqualone`](#using-payloadequalone)
   - [Using `EqualoneMixin` in your classes](#using-equalonemixin-in-your-classes)
     - [Simple value-based equality in your class](#simple-value-based-equality-in-your-class)
     - [Deep equality for collections](#deep-equality-for-collections-1)
     - [Shallow, but correct, equality for collections](#shallow-but-correct-equality-for-collections)
   - [Caveats \& Warnings](#caveats--warnings)
+    - [Cyclic Structures Warning](#cyclic-structures-warning)
+    - [Deep Equality in Records](#deep-equality-in-records)
     - [Asymmetric Comparison](#asymmetric-comparison)
     - [Null Comparison](#null-comparison-1)
     - [Customization Consistency](#customization-consistency)
@@ -119,11 +128,13 @@ This simply re-exports the official `collection` package used by `equalone`.
 
 You can use the `equalone` package in three main ways:
 
-- **Static methods**: Use static methods like `Equalone.equals`, `Equalone.deepEquals`, `Equalone.shallowEquals`, and `Equalone.empty` for quick, type-agnostic checks and comparisons.
-- **Wrapper class**: Wrap any value or collection in the `Equalone` class to enable robust equality and hashCode logic, especially for use in sets, maps, or when comparing complex/nested objects.
-- **Mixin for custom classes**: Add value-based equality to your own classes by mixing in `EqualoneMixin` and specifying which fields should participate in equality and hashCode calculations.
+- [Static methods](#using-static-methods): Use static methods like `Equalone.equals`, `Equalone.deepEquals`, `Equalone.shallowEquals`, and `Equalone.empty` for quick, type-agnostic checks and comparisons.
+- [Wrapper class](#using-equalone-wrapper): Wrap any value or collection in the `Equalone` class to enable robust equality and hashCode logic, especially for use in sets, maps, or when comparing complex/nested objects.
+- [Creating your own Equalone class](#extending-equalone): You can extend the base `Equalone` class to implement custom comparison and hashing logic.
+- [Using an Equalone instance as a function](#using-an-equalone-instance-as-a-function): An `Equalone` subclass instance can be used as a callable function to check the equality of values. 
+- [Mixin for custom classes](#using-equalonemixin-in-your-classes): Add value-based equality to your own classes by mixing in `EqualoneMixin` and specifying which fields should participate in equality and hashCode calculations.
 
-## Static methods usage
+## Using Static methods
 
 ### `Equalone.empty(value)`
 Checks if a value is empty (null, empty string, or empty collection). This method is customizable.
@@ -183,6 +194,40 @@ You can control type sensitivity with the `ignoreType` parameter (default: `true
 Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3]);                    // ✅ true   
 Equalone.shallowEquals([1, 2, 3], <num>[1, 2, 3], ignoreType: false); // ❌ false 
 ```
+### deepEquals vs shallowEquals
+
+- **`deepEquals`** performs a deep, recursive comparison: it checks all elements of collections, including nested structures. Two lists, maps, or sets are considered equal if their contents (and the contents of any nested collections) are equal by value, regardless of object references.
+
+- **`shallowEquals`** performs only a top-level (shallow) comparison: it compares only the first-level elements of collections, without checking nested structures. If an element is itself a collection, only its reference (identity) is compared, not its contents.
+
+
+```dart
+final a = [1, [2, 3]];
+final b = [1, [2, 3]];
+
+Equalone.deepEquals(a, b);    // ✅ true  (nested list contents are equal)
+Equalone.shallowEquals(a, b); // ❌ false (nested lists are different objects)
+
+final c = [1, 2, 3];
+final d = [1, 2, 3];
+
+Equalone.deepEquals(c, d);    // ✅ true
+Equalone.shallowEquals(c, d); // ✅ true
+```
+
+Use `deepEquals` for comparing complex or nested structures, and `shallowEquals` for fast, top-level collection comparison.
+
+> **Note:** `deepEquals` performs a recursive, thorough comparison of all nested elements, which makes it significantly more computationally intensive and slower than `shallowEquals`. Use `deepEquals` when you need full structural comparison, but prefer `shallowEquals` for performance-critical or simple top-level checks.
+
+Here is a table summarizing the main differences between `deepEquals` and `shallowEquals`:
+
+| Aspect                | `deepEquals`                                                                 | `shallowEquals`                                                      |
+|-----------------------|------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| Comparison depth      | Recursively compares all nested elements and collections                     | Compares only the top-level elements; nested collections by reference|
+| Use case              | For full structural comparison of complex/nested objects                     | For fast, top-level comparison where nested structure is not important|
+| Performance           | Slower (recursive, more computationally intensive)                           | Faster (non-recursive, less computation)                             |
+| Nested collections    | Compared by value (contents)                                                 | Compared by reference (identity)                                     |
+| Typical usage         | Comparing models, state objects, or deeply nested data                       | Quick checks, top-level collections, performance-critical scenarios  |
 
 ### Customization
 
@@ -192,7 +237,8 @@ You can globally override the equality and emptiness logic:
 import 'package:equalone/collection.dart';
 
 Equalone.initialize(
-  equals: const DeepCollectionEquality.unordered().equals, // Type-insensitive unordered deep equality
+  // Type-insensitive unordered deep equality
+  equals: const DeepCollectionEquality.unordered().equals, 
   empty: (v) => v is num ? v == 0 : Equalone.defaultEmpty(v),
 );
 
@@ -220,7 +266,7 @@ print(Equalone.equals('Hello', 'world')); // ❌ false
 
 > Use `Equalone.initialize` to globally customize default comparison and emptiness logic to match requirements of your app.
 
-## `Equalone` instances usage
+## Using `Equalone` wrapper
 
 You can wrap any value, collection, or object in an `Equalone` instance to enable robust equality and hashCode logic. This is especially useful when you want to compare complex or nested structures, use them as keys in maps, or store them in sets.
 
@@ -265,21 +311,6 @@ print(g == null); // ❌ false
 print(null == g); // ❌ false 
 ```
 
-### Custom equality 
-
-You can provide a custom equality function via the `equalsMethod` parameter. For example, to compare lists by their sum:
-
-```dart
-bool sumEquals(Object? a, Object? b) => (a is List<num> && b is List<num>)
-       ? (a.fold<num>(0, (num s, v) => s + v) == b.fold<num>(0, (num s, v) => s + v))
-       : false;
-
-final a = Equalone([1, 2, 3], equalsMethod: sumEquals);
-final b = Equalone([3, 3], equalsMethod: sumEquals);
-
-print(a == b); // ✅ true (both sum to 6)
-```
-
 ### Type sensitivity
 
 You can control whether type differences are considered in equality checks using the `ignoreType` parameter. By default, `ignoreType` is set to `true`, so type differences are ignored. If you set `ignoreType: false`, values with different types (e.g., `List<int>` and `List<num>`) will not be considered equal, even if their contents match.
@@ -291,6 +322,202 @@ final d = Equalone(<num>[1, 2, 3], ignoreType: false);
 print(c == d); // ✅ true (ignores type differences)
 print(d == c); // ❌ false (type differences matter for d)
 ```
+
+
+### Custom equality 
+
+You can provide a custom equality function via the `equalsMethod` parameter. For example, to compare lists by their sum:
+
+```dart
+bool sumEquals(Object? a, Object? b) => (a is List<num> && b is List<num>)
+       ? (a.fold<num>(0, (num s, v) => s + v) == b.fold<num>(0, (num s, v) => s + v))
+       : false;
+
+final a = Equalone([3, 3], equalsMethod: sumEquals);
+final b = Equalone([1, 2, 3], equalsMethod: sumEquals);
+
+print(a == b); // ✅ true (both sum to 6)
+```
+
+
+### Custom `hashCode`
+
+You can provide a custom hash code calculation for an `Equalone` instance using the `hashCodeMethod` parameter. This is useful when you want the hash code to reflect a specific property or a custom combination of values, rather than relying on the default `Equalone` hash logic provided by `hashCodeBuilder` static method.
+
+
+```dart
+int sumHashCode(Object? value, {bool ignoreType = true}) => value is List<num> 
+  ? value.fold<num>(0, (s, v) => s + v).hashCode 
+  : Equalone.hashCodeBuilder(value, ignoreType: ignoreType);
+
+final a = Equalone([3, 3], equalsMethod: sumEquals, hashCodeMethod: sumHashCode);
+final b = Equalone([1, 2, 3], equalsMethod: sumEquals, hashCodeMethod: sumHashCode);
+final c = Equalone([2, 2, 2], equalsMethod: sumEquals, hashCodeMethod: sumHashCode);
+
+print(a == b);                    // ✅ true (both sum to 6)
+print(a.hashCode == b.hashCode);  // ✅ true (hash code is 6.hashCode)
+
+final s = {a,b};                  // s = {Equalone([1, 2, 3])}
+
+print(s.length);                  // 1 (`b` was not added)
+print(s.contains(b));             // ✅ true (`b` is in the set, cuz it has the same hash as `a`)
+print(s.contains(c)));            // ✅ true
+```
+
+You can use any logic for `hashCodeMethod` that matches your equality logic. This is especially important when using `Equalone` as a key in a `Map` or as an element in a `Set`, as hash codes must be consistent with equality.
+
+Another example: using only a specific property of a map for hashing and equality:
+
+```dart
+int idHashCode(Object? value) => value is Map && value['id'] != null 
+    ? value['id'].hashCode : 
+    : Equalone.hashCodeBuilder(value, ignoreType: ignoreType);
+
+bool idEquals(Object? a, Object? b) =>
+  a is Map && b is Map ? a['id'] == b['id'] : false;
+
+final a = Equalone({'id': 42, 'name': 'One'}, equalsMethod: idEquals, hashCodeMethod: idHashCode);
+final b = Equalone({'id': 42, 'name': 'Equ'}, equalsMethod: idEquals, hashCodeMethod: idHashCode);
+
+print(a == b); // ✅ true (same id)
+print(a.hashCode == b.hashCode); // ✅ true (hash code is based on id)
+```
+
+> **Note:** Always ensure that your custom `hashCodeMethod` is consistent with your `equalsMethod` to avoid unexpected behavior in collections.
+
+## Extending `Equalone`
+
+Customizing is great, but having to set custom methods every time is not always convenient.
+
+That's why, in addition to using `Equalone` directly, you can create your own subclasses with specific logic tailored to your needs.
+
+You can create your own classes that extend `Equalone` to add custom behavior or additional methods while retaining robust value-based equality and hashCode logic.
+
+For even more control, you can fully override the `testEquals` and `getHashCode` methods in your own subclass of `Equalone`. This approach is useful if you need to implement advanced or non-standard comparison and hashing logic.
+
+To customize or override equality and hashing behavior for specialized use cases You can use the base static methods of `Equalone` :
+
+- `Equalone.hashCodeBuilder`
+- `Equalone.deepEquals`
+- `Equalone.shallowEquals`
+
+The extending allows you to adapt `Equalone` to any scenario that requires custom equality or hashing logic.
+
+### Customizing methods 
+
+When extending `Equalone`, pass the value you want to wrap to the superclass constructor, and optionally provide custom equality and/or hash logic. 
+
+You can provide custom handlers and hash code for your `Equalone` subclass by passing your own `equalsMethod` and `hashCodeMethod` to the `Equalone` constructor. This allows you to define exactly how two values are compared and how the hash code is calculated.
+
+Let's see how you can simplify working with the [example of comparing lists by the sum of their elements](#custom-equality):
+
+```dart
+class EqualoneSum<T extends num> extends Equalone<List<T>> {
+  const EqualoneSum(super.value) : super(
+      equalsMethod: sumEquals,
+      hashCodeMethod: sumHashCode
+    );
+}
+
+final a = EqualoneSum([3, 3]);
+final b = EqualoneSum([1, 2, 3]);
+final c = EqualoneSum([2, 2, 2]);
+
+print(a == b);                    // ✅ true (both sum to 6)
+print(a.hashCode == b.hashCode);  // ✅ true (hash code is 6.hashCode)
+
+final s = {a,b};                  // s = {EqualoneSum([1, 2, 3])}
+
+print(s.length);                  // 1 (`b` was not added)
+print(s.contains(b));             // ✅ true 
+print(s.contains(c));             // ✅ true
+
+```
+
+
+### Overriding Methods
+
+The most straightforward way to create a class based on `Equalone` with custom logic is to implement the logic directly in the class methods `testEquals` and `getHashCode`.
+
+Here’s how such a class would look for our [previous example](#customizing-methods):
+
+```dart
+class EqualoneSum extends Equalone<List<num>> {
+  const EqualoneSum([super.value = const []]);
+
+  @override
+  bool testEquals(Object? a, Object? b) =>
+    (a is List<num> && b is List<num>)
+      ? (a.fold<num>(0, (num s, v) => s + v) == b.fold<num>(0, (num s, v) => s + v))
+      : false;
+
+  @override
+  int getHashCode(List<num> value) =>
+    value.fold<num>(0, (s, v) => s + v).hashCode;
+}
+
+final a = EqualoneSum([3, 3]);
+final b = EqualoneSum([1, 2, 3]);
+
+print(a == b);                    // ✅ true (both sum to 6)
+print(a.hashCode == b.hashCode);  // ✅ true (hash code is 6.hashCode)
+```
+
+No separate functions are needed — all logic is contained within a single class.
+
+### Using an `Equalone` instance as a function
+
+As you may have noticed, in the previous example above, the `value` parameter in the constructor is optional.
+
+This was done intentionally, because an instance of `EqualoneSum` can be used as a function to compare two values:
+
+```dart
+  final equalsBySum = const EqualoneSum();
+
+  final a = EqualoneSum([3, 3]);
+
+  print( equalsBySum([1,2,3], [3,3]) ); // ✅ true 
+  print( equalsBySum([1,2,3], a) );     // ✅ true 
+```
+
+well, you can also use the `hashCode` getter method:
+
+```dart
+print( equalsBySum.getHashCode([2,2,2]) ); // 69606
+```
+
+### Using `PayloadEqualone`
+
+The `PayloadEqualone` class is designed to associate additional payload data (`data`) with a value (`value`)
+that is compared using the [Equalone] equality logic.
+
+The main purpose of this class is to bind extra data (`data`) to a value (`value`) that participates in
+equality and hashCode calculations via [Equalone]. While equality and hashCode are determined solely by `value`,
+the `data` field allows you to attach related information that does not affect comparison.
+
+Use Cases
+- Attaching metadata or auxiliary information to a value object that is used as a key in collections or for comparison.
+- Keeping a reference to the original data or context while using [Equalone] for equality checks.
+- Associating additional payloads with values in state management, caching, or mapping scenarios.
+
+```dart
+// You want to compare users by their ID, but also keep their full profile as payload.
+final user = PayloadEqualone(
+  123, // value used for equality
+  data: UserProfile(id: 123, name: 'One'),
+);
+// Only the value (123) is used for equality:
+final another = PayloadEqualone(123, data: UserProfile(id: 123, name: 'Equ'));
+
+print(user == another); // ✅ true
+
+// You can still access the associated data:
+print(user.data.name); // 'One'
+```
+
+This class is useful when you need to compare objects by a specific value but also need to retain
+associated data for further processing or retrieval.
+
 
 ## Using `EqualoneMixin` in your classes
 
@@ -353,6 +580,50 @@ print(a == b); // ✅ true
 
 ## Caveats & Warnings
 
+### Cyclic Structures Warning
+
+`Equalone.deepEquals` does **not** detect or handle cyclic (self-referencing) data structures. Passing collections with cycles (e.g., a list that contains itself) will result in a stack overflow or infinite recursion.
+
+```dart
+final a = [];
+a.add(a);
+
+Equalone.deepEquals(a, a); // 🚫 This will cause a stack overflow:
+```
+Avoid using `deepEquals` on cyclic data structures. If you need to compare potentially cyclic graphs, consider using specialized libraries that support cycle detection.
+
+### Deep Equality in Records 
+
+Unlike collections, Dart's `Record` type does **not** support deep equality out of the box. When you compare two records that contain complex objects (such as lists, maps, or sets), the comparison and `hashCode` calculation are performed using reference equality for those inner objects, not by their contents.
+
+This means that two records with identical nested collections will not be considered equal unless the nested objects are the exact same instances.
+
+```dart
+final r1 = (a: [1, 2, 3], b: {'x': 1});
+final r2 = (a: [1, 2, 3], b: {'x': 1});
+
+print(r1 == r2); // ❌ false (different list and map instances)
+print(r1.hashCode == r2.hashCode); // ❌ false
+```
+
+Even though the contents of `a` and `b` are the same in both records, the equality check fails because the lists and maps are different objects in memory.
+
+**With Equalone:**
+
+To achieve deep equality for records, wrap the inner collections with `Equalone`:
+
+```dart
+final r1 = (a: Equalone([1, 2, 3]), b: Equalone({'x': 1}));
+final r2 = (a: Equalone([1, 2, 3]), b: Equalone({'x': 1}));
+
+print(r1 == r2); // ✅ true (deep equality for collections)
+print(r1.hashCode == r2.hashCode); // ✅ true
+```
+
+By wrapping the collections with `Equalone`, you ensure that equality and hashCode are based on the contents, not just references.
+
+> **Note:** If you use records with nested collections and want value-based comparison, always wrap those collections with `Equalone` to avoid subtle bugs and unexpected behavior.
+
 ### Asymmetric Comparison
 
 When comparing an `Equalone` instance with a regular collection, the result may be asymmetric.
@@ -406,7 +677,7 @@ class Person with EqualoneMixin {
   final List<int> scores;
   Person(this.name, this.scores);
   @override
-  List<Object?> get equalones => [name, scores]; // Not wrapped: shallow equality
+  List<Object?> get equalones => [name, scores]; // Not wrapped: shallow reference equality 
 }
 
 final a = Person('One', [1, 2, 3]);
@@ -416,7 +687,7 @@ print(a == b); // ❌ false (different list references)
 class PersonDeep with EqualoneMixin {
   final String name;
   final List<int> scores;
-  PersonDeep(this.name, this.scores);
+  const PersonDeep(this.name, this.scores);
   @override
   List<Object?> get equalones => [name, Equalone(scores)]; // Wrapped: deep equality
 }
@@ -429,7 +700,7 @@ When using `EqualoneMixin`, be careful with mutable collections in the `equalone
 
 ### Equalone HashCode Limitations
 
-The `hashCode` for collections is based on their length and type, not their contents. This means that two collections with the same length but different elements may have the same `hashCode`.
+The default `hashCode` for collections is based on their length and type, not their contents. This means that two collections with the same length but different elements may have the same `hashCode`.
 
 ```dart
 final a = Equalone([1, 2, 3]);

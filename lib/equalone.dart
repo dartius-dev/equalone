@@ -96,6 +96,7 @@ mixin EqualoneMixin {
   int get hashCode => runtimeType.hashCode ^ Object.hashAll(equalones);
 }
 
+typedef HashCodeBuilder<T> = int Function(T? o, {bool ignoreType});
 typedef TestEquals<T> = bool Function(T? a, T? b);
 typedef TestEmpty = bool Function(Object?);
 
@@ -270,11 +271,11 @@ class Equalone<T> {
     if (identical(a, b)) return true;
     return (ignoreType || a.runtimeType == b.runtimeType) &&
         switch (a) {
-          final List list => const ListEquality().equals(list, b as List?),
-          final Map map => const MapEquality().equals(map, b as Map?),
-          final Set set => const SetEquality().equals(set, b as Set?),
+          final List list => b is List? ? const ListEquality().equals(list, b) : false,
+          final Map map => b is Map? ? const MapEquality().equals(map, b) : false,
+          final Set set => b is Set? ? const SetEquality().equals(set, b) : false,
           final Iterable iterable =>
-            const IterableEquality().equals(iterable, b as Iterable?),
+            b is Iterable? ? const IterableEquality().equals(iterable, b) : false,
           final obj => obj == b,
         };
   }
@@ -298,41 +299,85 @@ class Equalone<T> {
         null => true,
         final String s => s.isEmpty,
         final Iterable i => i.isEmpty,
+        final Map m => m.isEmpty,
         final Equalone e => e.isEmpty,
         _ => false
       };
 
-  ///
-  ///
-  ///
-  final T value;
-  final TestEquals<Object>? equalsMethod;
-  final bool ignoreType;
+  static int hashCodeBuilder<T>(Object? value, {bool ignoreType = true}) {
+    return switch (value) {
+      final List list => Object.hash((ignoreType ? List : T).hashCode, list.length),
+      final Map map => Object.hash((ignoreType ? Map : T).hashCode, map.length),
+      final Set set => Object.hash((ignoreType ? Set : T).hashCode, set.length),
+      final Iterable _ => (ignoreType ? Iterable : T).hashCode,
+      _ => value.hashCode,
+    };
+  }
 
-  const Equalone(this.value, {this.equalsMethod, this.ignoreType = true});
-  const Equalone.deep(this.value, {this.ignoreType = true}) : equalsMethod = deepEquals;
-  const Equalone.shallow(this.value, {this.ignoreType = true}) : equalsMethod = shallowEquals;
+  final T value;
+  final bool ignoreType;
+  final TestEquals<Object>? equalsMethod;
+  final HashCodeBuilder<Object>? hashCodeMethod;
+
+  const Equalone(this.value, {this.equalsMethod, this.hashCodeMethod, this.ignoreType = true});
+  const Equalone.deep(this.value, {this.ignoreType = true}) : equalsMethod = deepEquals, hashCodeMethod = null;
+  const Equalone.shallow(this.value, {this.ignoreType = true}) : equalsMethod = shallowEquals, hashCodeMethod = null;
 
   bool get isEmpty => empty(value);
   bool get isNotEmpty => !isEmpty;
 
-  @override
-  bool operator ==(Object other) {
-    final Object? otherValue = other is Equalone ? other.value : other;
+  bool testEquals(Object? a, Object? b) => deepEquals(a, b, ignoreType: ignoreType);
+  int getHashCode(T value) => (hashCodeMethod ?? hashCodeBuilder)(value, ignoreType: ignoreType);
+
+  bool call(Object? a, Object? b) {
+    while (a is Equalone) a = a.value;
+    while (b is Equalone) b = b.value;
     return equalsMethod != null
-        ? (ignoreType || otherValue is T) && equalsMethod!(value, otherValue)
-        : deepEquals(value, otherValue, ignoreType: ignoreType);
+        ? (ignoreType || (a is T && b is T)) && equalsMethod!(a, b)
+        : testEquals(a, b);
   }
 
   @override
-  int get hashCode => switch (value) {
-        final List list =>
-          Object.hash((ignoreType ? List : T).hashCode, list.length),
-        final Map map =>
-          Object.hash((ignoreType ? Map : T).hashCode, map.length),
-        final Set set =>
-          Object.hash((ignoreType ? Set : T).hashCode, set.length),
-        final Iterable _ => (ignoreType ? Iterable : T).hashCode,
-        _ => value.hashCode,
-      };
+  bool operator ==(Object other) => call(value, other);
+  
+  @override
+  int get hashCode => getHashCode(value);
+}
+
+/// The `PayloadEqualone` class is designed to associate additional payload data (`data`) with a value (`value`)
+/// that is compared using the [Equalone] equality logic.
+///
+/// # Purpose
+/// The main purpose of this class is to bind extra data (`data`) to a value (`value`) that participates in
+/// equality and hashCode calculations via [Equalone]. While equality and hashCode are determined solely by `value`,
+/// the `data` field allows you to attach related information that does not affect comparison.
+///
+/// # Use Cases
+/// - Attaching metadata or auxiliary information to a value object that is used as a key in collections or for comparison.
+/// - Keeping a reference to the original data or context while using [Equalone] for equality checks.
+/// - Associating additional payloads with values in state management, caching, or mapping scenarios.
+///
+/// # Examples
+///
+/// ```dart
+/// final user = PayloadEqualone(
+///   123, // value used for equality
+///   data: UserProfile(id: 123, name: 'One'), // keep full profile as payload.
+/// );
+///
+/// final another = PayloadEqualone(123, data: UserProfile(id: 123, name: 'Equ'));
+/// print(user == another); // true, Only the value (123) is used for equality:
+///
+/// print(user.data.name); // 'One', You can still access the associated data
+/// ```
+///
+/// This class is useful when you need to compare objects by a specific value but also need to retain
+/// associated data for further processing or retrieval.
+///
+class PayloadEqualone<T> extends Equalone {
+  final T? data;
+  PayloadEqualone(super.value, {required this.data, super.ignoreType, super.equalsMethod, super.hashCodeMethod});
+
+  @override
+  String toString() => "${super.toString()}(${data.runtimeType})";
 }
