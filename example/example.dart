@@ -83,7 +83,7 @@ void main() {
     print("default:");
     print(". 0 is empty: ${Equalone.empty(0)}");
     print(". list equality: ${Equalone.equals(<num>[0], [0])}");
-    Equalone.initialize(
+    Equalone.customize(
       equals:
           const DeepCollectionEquality.unordered().equals, // Type-insensitive unordered deep equality
       empty: (v) => switch (v) { num n => n == 0, _ => Equalone.defaultEmpty(v) },

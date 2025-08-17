@@ -163,6 +163,27 @@ void main() {
       expect(Equalone.deepEquals(null, []), isFalse);
     });
   });
+  group('Equalone customization', () {
+    test('custom initialization', () {
+      final restore = Equalone.customize(
+        equals: const EqualoneSum().call,
+        empty: (v) => v is num ? v == 0 : Equalone.defaultEmpty(v),
+      );
+      // Use custom equality logic
+      expect(Equalone.equals([1, 2, 3], [1, 2, 3]), isTrue);
+      expect(Equalone.equals([1, 2, 3], [3, 2, 1]), isTrue);
+      expect(Equalone.equals([1, 2, 3], [1, 2, 3]), isTrue);
+      expect(Equalone.equals([1, 2, 3], [3, 3]), isTrue);
+      expect(Equalone.empty(0.0), isTrue);
+      
+      restore(); // Restore default equality logic
+
+      expect(Equalone.equals([1, 2, 3], [1, 2, 3]), isTrue);
+      expect(Equalone.equals([1, 2, 3], [3, 2, 1]), isFalse);
+      expect(Equalone.equals([1, 2, 3], [3, 3]), isFalse);
+      expect(Equalone.empty(0.0), isFalse);
+    });
+  });
   group('Equalone wrapper', () {
     test('== and hashCode for lists', () {
       final a = Equalone([1, 2, 3]);

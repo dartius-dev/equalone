@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [1.2.0] - 2025-08-17
+### Added
+- `Equalone.customize` instead of `Equalone.initialize`
+
+### Changed
+- Updated README.md
 
 ## [1.1.0] - 2025-08-10
 ### Added

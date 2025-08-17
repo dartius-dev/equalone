@@ -164,6 +164,24 @@ void main() {
     });
   });
 
+  group('Equalone customization', () {
+    test('custom initialization', () {
+      final restore = Equalone.customize(
+        equals: const EqualoneSum().call,
+        empty: (v) => v is num ? v == 0 : Equalone.defaultEmpty(v),
+      );
+      // Use custom equality logic
+      assert(Equalone.equals([1, 2, 3], [1, 2, 3]));
+      assert(Equalone.equals([1, 2, 3], [3, 2, 1]));
+      assert(Equalone.empty(0.0));
+      
+      restore(); // Restore default equality logic
+
+      assert(!Equalone.equals([1, 2, 3], [3, 2, 1]));
+      assert(!Equalone.empty(0.0));
+    });
+  });
+
   group('Equalone wrapper', () {
     test('== and hashCode for lists', () {
       final a = Equalone([1, 2, 3]);

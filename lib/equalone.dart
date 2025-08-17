@@ -231,10 +231,10 @@ typedef TestEmpty = bool Function(Object?);
 /// ```
 ///
 /// ### Customization
-/// [Equalone.initialize] allows you to globally customize how equality and emptiness are determined.
+/// [Equalone.customize] allows you to globally customize how equality and emptiness are determined.
 /// Call this to override the default equality/emptiness logic globally.
 /// ```dart
-/// Equalone.initialize(
+/// Equalone.customize(
 ///   equals: const DeepCollectionEquality().equals, // Type-insensitive deep equality
 ///   empty: (v) => switch(v) {
 ///     num n => n==0,  // Custom empty check for numbers
@@ -242,7 +242,19 @@ typedef TestEmpty = bool Function(Object?);
 ///   },
 /// );
 /// ```
-///
+/// 
+/// Local customization also possible:
+/// 
+/// ```dart
+/// final restore = Equalone.customize(
+///   equals: const DeepCollectionEquality().equals,
+/// );
+/// 
+/// ... Use custom equality logic
+/// 
+/// restore(); // Restore default equality logic
+/// ```
+/// 
 /// {@endtemplate}
 @immutable
 class Equalone<T> {
@@ -250,13 +262,24 @@ class Equalone<T> {
 
   static bool Function(Object? value) empty = defaultEmpty;
 
-  static void initialize({
+  static void Function() customize({
     TestEquals<Object>? equals,
     TestEmpty? empty,
   }) {
+    final backup = (Equalone.equals, Equalone.empty);
+
     if (equals != null) Equalone.equals = equals;
     if (empty != null) Equalone.empty = empty;
+    
+    return () {
+      Equalone.equals = backup.$1;
+      Equalone.empty = backup.$2;
+    };
   }
+
+  @Deprecated('Use `Equalone.customize` instead')
+  static void initialize({TestEquals<Object>? equals, TestEmpty? empty}) =>
+      customize(equals: equals ?? Equalone.equals, empty: empty ?? Equalone.empty);
 
   /// Performs a shallow (top-level) equality check between two objects.
   ///
