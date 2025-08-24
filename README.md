@@ -2,6 +2,7 @@
 ![pub version](https://img.shields.io/pub/v/equalone)
 ![pub points](https://img.shields.io/pub/points/equalone)
 ![likes](https://img.shields.io/pub/likes/equalone)
+[![example](./example/example.svg)](https://github.com/dartius-dev/equalone/blob/main/example/)
 
 `equalone` is a Dart utility package for deep equality, value-based comparison, and robust hashCode generation for any Dart object, including List, Map, Set, and nested collections. It solves common problems with object comparison, custom equality, and hashCode in Dart data classes, value objects, and collections. Use `equalone` to implement deep equality, shallow equality, and custom comparison logic for models, state objects, and when using objects as keys in Map or elements in Set. The package provides static methods, a wrapper class, and a mixin for easy integration with your Dart or Flutter projects.
 
@@ -78,7 +79,7 @@ And that's not ALL! Keep reading...
     - [deepEquals vs shallowEquals](#deepequals-vs-shallowequals)
     - [Customization](#customization)
   - [Using `Equalone` wrapper](#using-equalone-wrapper)
-    - [Deep equality for collections](#deep-equality-for-collections)
+    - [Equality for collections](#equality-for-collections)
     - [Comparing with regular collections](#comparing-with-regular-collections)
     - [Null comparison](#null-comparison)
     - [Type sensitivity](#type-sensitivity)
@@ -91,7 +92,7 @@ And that's not ALL! Keep reading...
     - [Using `PayloadEqualone`](#using-payloadequalone)
   - [Using `EqualoneMixin` in your classes](#using-equalonemixin-in-your-classes)
     - [Simple value-based equality in your class](#simple-value-based-equality-in-your-class)
-    - [Deep equality for collections](#deep-equality-for-collections-1)
+    - [Deep equality for collections](#deep-equality-for-collections)
     - [Shallow, but correct, equality for collections](#shallow-but-correct-equality-for-collections)
   - [Caveats \& Warnings](#caveats--warnings)
     - [Cyclic Structures Warning](#cyclic-structures-warning)
@@ -272,11 +273,37 @@ print(Equalone.equals('Hello', 'world')); // ❌ false
 
 > Use `Equalone.customize` to globally customize default comparison and emptiness logic to match requirements of your app.
 
+**Local customization** also possible.
+
+The example below demonstrates how to locally customize the equality logic for a specific context or block of code, without affecting the global behavior.
+
+
+```dart
+final restore = Equalone.customize(
+  equals: const DeepCollectionEquality().unordered().equals,
+);
+
+print(Equalone.equals([1, 2, 3], [3, 2, 1]));      // ✅ true 
+
+restore(); // Restores previous equality logic
+
+print(Equalone.equals([1, 2, 3], [3, 2, 1]));      // ❌ false  
+
+```
+
+The `customize` method returns a `restore` function, which can be called to revert to the previous (default) equality logic.  
+This allows for flexible, context-specific equality comparisons without permanently affecting global behavior.
+
+- Use `Equalone.customize` to set a custom equality function.
+- All calls to `Equalone.equals` will use the new logic until `restore()` is called.
+- After calling `restore()`, the default equality logic is reinstated.
+
+
 ## Using `Equalone` wrapper
 
 You can wrap any value, collection, or object in an `Equalone` instance to enable robust equality and hashCode logic. This is especially useful when you want to compare complex or nested structures, use them as keys in maps, or store them in sets.
 
-### Deep equality for collections
+### Equality for collections
 
 ```dart
 final a = Equalone([1, 2, 3]);
@@ -289,6 +316,18 @@ final c = Equalone({'x': 1, 'y': 2});
 final d = Equalone({'x': 1, 'y': 2});
 
 print(c == d); // ✅ true (deep equality for maps)
+```
+
+By default, `deepEquals` is used for equality checks.
+
+But you can explicitly specify the comparison method using `Equalone.deep` for deep equality or `Equalone.shallow` for shallow equality.
+
+```dart
+  final a = Equalone.deep([1, [2, 3]]);
+  final b = Equalone.shallow([1, [2, 3]]);
+
+  print(a == b);  // ✅ true (deep equality)
+  print(b == a);  // ❌ false (shallow equality)
 ```
 
 ### Comparing with regular collections
