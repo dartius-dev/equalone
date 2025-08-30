@@ -2,7 +2,7 @@
 ![pub version](https://img.shields.io/pub/v/equalone)
 ![pub points](https://img.shields.io/pub/points/equalone)
 ![likes](https://img.shields.io/pub/likes/equalone)
-[![example](./example/example.svg)](https://github.com/dartius-dev/equalone/blob/main/example/)
+[![example](https://github.com/dartius-dev/equalone/raw/main/example/example.svg)](https://github.com/dartius-dev/equalone/blob/main/example/)
 
 `equalone` is a Dart utility package for deep equality, value-based comparison, and robust hashCode generation for any Dart object, including List, Map, Set, and nested collections. It solves common problems with object comparison, custom equality, and hashCode in Dart data classes, value objects, and collections. Use `equalone` to implement deep equality, shallow equality, and custom comparison logic for models, state objects, and when using objects as keys in Map or elements in Set. The package provides static methods, a wrapper class, and a mixin for easy integration with your Dart or Flutter projects.
 
@@ -52,7 +52,7 @@
 
 Because it's ALL in ONE! Simple, easy, accessible!
 
-And that's not ALL! Keep reading...
+And that's NOT all! There's so much more to discover...
 
 ## Features
 
@@ -63,13 +63,37 @@ And that's not ALL! Keep reading...
 - Easy integration with models, state objects, and value classes
 - Mixin for value-based equality in your own classes
 
+## Getting started
+
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  equalone: 
+```
+
+Import in your Dart code:
+
+```dart
+import 'package:equalone/equalone.dart';
+```
+
+`equalone` is built on top of the popular [`collection`](https://pub.dev/packages/collection) package for advanced equality and hashing.
+
+For convenience, you can access `collection` features via:
+```dart
+import 'package:equalone/collection.dart';
+```
+
+This simply re-exports the official `collection` package used by `equalone`.
+
 # Contents
 
 - [EqualOne](#equalone)
   - [Why EqualOne?](#why-equalone)
   - [Features](#features)
-- [Contents](#contents)
   - [Getting started](#getting-started)
+- [Contents](#contents)
   - [Usage](#usage)
   - [Using Static methods](#using-static-methods)
     - [`Equalone.empty(value)`](#equaloneemptyvalue)
@@ -105,29 +129,6 @@ And that's not ALL! Keep reading...
   - [Additional information](#additional-information)
   - [License](#license)
 
-## Getting started
-
-Add to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  equalone: 
-```
-
-Import in your Dart code:
-
-```dart
-import 'package:equalone/equalone.dart';
-```
-
-`equalone` is built on top of the popular [`collection`](https://pub.dev/packages/collection) package for advanced equality and hashing.
-
-For convenience, you can access `collection` features via:
-```dart
-import 'package:equalone/collection.dart';
-```
-
-This simply re-exports the official `collection` package used by `equalone`.
 
 ## Usage
 
