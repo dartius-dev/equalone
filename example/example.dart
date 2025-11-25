@@ -1,20 +1,20 @@
 import 'package:equalone/equalone.dart';
-import 'package:equalone/collection.dart';
 
 import 'example.lib.dart';
+
 
 void main() {
   {
     print("# Type dependent comparison\n");
     compare([
-      Equalone<List>([1, 2, 3]),
-      Equalone<List?>([1, 2, 3]),
-      Equalone<List?>(null),
-      Equalone<List<int>>([1, 2, 3]),
-      Equalone<List<int>?>([1, 2, 3]),
-      Equalone<List<int?>?>([1, 2, 3]),
-      Equalone<List<int?>?>(null),
-      Equalone<List<int>?>(null),
+      Equalone<List>.shallow([1, 2, 3]),
+      Equalone<List?>.shallow([1, 2, 3]),
+      Equalone<List?>.shallow(null),
+      Equalone<List<int>>.shallow([1, 2, 3]),
+      Equalone<List<int>?>.shallow([1, 2, 3]),
+      Equalone<List<int?>?>.shallow([1, 2, 3]),
+      Equalone<List<int?>?>.shallow(null),
+      Equalone<List<int>?>.shallow(null),
       <dynamic>[1, 2, 3],
       <int>[1, 2, 3],
       <int?>[1, 2, 3],
@@ -25,36 +25,11 @@ void main() {
   {
     print("# Value dependent comparison\n");
     compare([
-      Equalone([1]),
-      Equalone(<num>[1]),
-      Equalone(<num>[1], ignoreType: false),
-      Equalone([1, 2]),
-      Equalone([2, 1]),
+      Equalone.shallow([1]),
+      Equalone.shallow(<num>[1]),
+      Equalone.shallow([1, 2]),
+      Equalone.shallow([2, 1]),
     ], name: valueName);
-  }
-
-  {
-    final a = PersonRef('One', [1]);
-    final b = PersonDeep('One', [2]);
-    final c = Customer('One', 30);
-    final d = Producer('One', 0.6);
-    final e = <String, dynamic>{'name': 'One'};
-    final f = <String, String>{'id': 'One'};
-    final g = {'key': 'One'};
-
-    print("# Extended Equalone comparison\n");
-    compare([
-      Equalone('One'),
-      ValueEqualone(a, (o) => o?.name),
-      PayloadEqualone(b.name, data: b),
-      ValueEqualone(c, (o) => o?.name),
-      PayloadEqualone(d.name, data: d),
-      NamedValueEqualone(c),
-      NamedValueEqualone(d),
-      MapValueEqualone(e, 'name'),
-      MapValueEqualone(f, 'id'),
-      MapValueEqualone(g, 'key'),
-    ], name: typedEqualone);
   }
 
   {
@@ -72,27 +47,12 @@ void main() {
     print(
         "Person: ${PersonRef('One', [1, 2, 3]) == PersonRef('One', [1, 2, 3])}");
     print(
-        "PersonEx: ${PersonShallow('One', [1, 2, 3]) == PersonShallow('One', [1, 2, 3])}");
+        "PersonEx: ${PersonSpread('One', [1, 2, 3]) == PersonSpread('One', [1, 2, 3])}");
     print(
-        "PersonDeep: ${PersonDeep('One', [1, 2, 3]) == PersonDeep('One', [1, 2, 3])}");
+        "PersonDeep: ${PersonShallow('One', [1, 2, 3]) == PersonShallow('One', [1, 2, 3])}");
     print("");
   }
 
-  {
-    print("# Customization");
-    print("default:");
-    print(". 0 is empty: ${Equalone.empty(0)}");
-    print(". list equality: ${Equalone.equals(<num>[0], [0])}");
-    Equalone.customize(
-      equals:
-          const DeepCollectionEquality.unordered().equals, // Type-insensitive unordered deep equality
-      empty: (v) => switch (v) { num n => n == 0, _ => Equalone.defaultEmpty(v) },
-    );
-    print("customized:");
-    print(". 0 is empty: ${Equalone.empty(0)}");
-    print(". list equality: ${Equalone.equals(<num>[1,2], [2,1])}");
-    print("");
-  }
 }
 
 ///
@@ -131,6 +91,6 @@ String valueName(Object? obj) {
     List<num> _ => '<num>',
     _ => '',
   };
-  return "$type[${e.value.join(',')}]${e.ignoreType ? '' : 'typed'}";
+  return "$type[${e.value.join(',')}]${e.equality.runtimeType}";
 }
 

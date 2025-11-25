@@ -1,22 +1,13 @@
 import 'package:meta/meta.dart';
 import 'package:collection/collection.dart';
 
-/// {@template equalone_mixin}
+/// 
 /// The [EqualoneMixin] provides a reusable, standardized way to implement value-based equality in Dart classes.
-///
-/// ### Purpose
-/// Use this mixin to simplify and unify equality and hashCode logic for value objects, data models, or any class
-/// where you want equality to be based on the values of fields rather than object identity.
-///
-/// ### How It Works
-/// Classes that mix in [EqualoneMixin] must override the [equalones] getter to return a list of all fields
-/// that should participate in equality and hashCode calculations. The mixin then provides a robust implementation
-/// of [==] and [hashCode] using these values.
+/// The mixin provides a robust implementation of [==] and [hashCode] using [equalones] values.
 ///
 /// ### Usage
 /// 1. Add `with EqualoneMixin` to your class declaration.
-/// 2. Override the `equalones` getter to return a list of fields to compare.
-///    (Be careful with use of [List], [Map] or [Set] fields).
+/// 2. Override the `equalones` getter to return a list of fields to compare. 
 /// 3. Do not override [==] or [hashCode] unless you need custom logic.
 ///
 /// ```dart
@@ -37,10 +28,11 @@ import 'package:collection/collection.dart';
 ///   print(a.hashCode == b.hashCode); // true
 /// }
 /// ```
-/// ### Caution
-/// - Be careful with using collections ([List], [Map], [Set]) in [equalones]
-///   - Prefer using immutable collections or value objects to avoid unexpected behavior.
-///   - Try to use [Equalone] for collections to ensure deep equality.
+/// 
+/// ⚠️ **Caution when using collections ([List], [Map], [Set]) in [equalones]:**
+///   - Directly including mutable collections in [equalones] may lead to incorrect equality or hashCode results.
+///   - Prefer immutable collections or value objects to avoid unexpected equality issues.
+///   - For collections, always wrap them with [Equalone.shallow] or [Equalone.deep] to ensure correct and predictable equality checks.
 ///
 /// ```dart
 /// class Person with EqualoneMixin {
@@ -50,16 +42,16 @@ import 'package:collection/collection.dart';
 ///   Person(this.name, this.scores);
 ///
 ///   @override
-///   List<Object?> get equalones => [name, Equalone(scores)];
+///   List<Object?> get equalones => [name, Equalone.shallow(scores)];
 /// }
 ///
 /// void main() {
 ///   final a = Person('One', [1, 2, 3]);
 ///   final b = Person('One', [1, 2, 3]);
-///   print(a == b); // true (deep equality for the list)
+///   print(a == b); // true (shallow equality for the list)
 /// }
 /// ```
-///
+/// 
 /// ### When to Use
 /// - For value objects and data classes where equality should be based on field values.
 /// - To avoid boilerplate and errors in manual `==`/`hashCode` implementations.
@@ -75,7 +67,7 @@ import 'package:collection/collection.dart';
 /// - Ability to use deep equality for collections and nested structures (via [Equalone]).
 /// - Makes it easy to create value objects that can be used in collections, maps, or as keys.
 ///
-/// {@endtemplate}
+/// 
 mixin EqualoneMixin {
   List<Object?> get equalones;
 
@@ -84,11 +76,7 @@ mixin EqualoneMixin {
     final equal = identical(this, other) ||
         other is EqualoneMixin &&
             runtimeType == other.runtimeType &&
-            Equalone.shallowEquals(
-                // do not use deepEquals
-                equalones,
-                other.equalones);
-
+            Equalone.shallowEquals(equalones, other.equalones);
     return equal;
   }
 
@@ -96,12 +84,8 @@ mixin EqualoneMixin {
   int get hashCode => runtimeType.hashCode ^ Object.hashAll(equalones);
 }
 
-typedef HashCodeBuilder<T> = int Function(T? o, {bool ignoreType});
-typedef TestEquals<T> = bool Function(T? a, T? b);
-typedef TestEmpty = bool Function(Object?);
 
-/// {@template equalone_class}
-/// ## Equalone
+/// 
 /// The [Equalone] class is a value wrapper that provides deep, customizable equality
 /// and [hashCode] logic for any value type.
 ///
@@ -113,17 +97,22 @@ typedef TestEmpty = bool Function(Object?);
 /// or storing them in sets.
 ///
 /// ### Usage
-/// - Wrap any value or collection in [Equalone] to enable deep equality.
+/// - Wrap any value or collection in [Equalone] to enable desired equality.
 /// - Use in your models, state objects, or anywhere value-based comparison is needed.
 ///
+/// There are three ways to create an [Equalone] instance:
+/// - `Equalone.shallow(value)` - uses shallow (top-level) equality.
+/// - `Equalone.deep(value)` - uses deep (recursive) equality.
+/// - `Equalone(value, equality: Equality())` - uses custom equality.
+///
 /// ```dart
-/// final a = Equalone([1, 2, 3]);
-/// final b = Equalone([1, 2, 3]);
-/// print(a == b); // true (deep equality for lists)
+/// final a = Equalone.shallow([1, 2, 3]);
+/// final b = Equalone.shallow([1, 2, 3]);
+/// print(a == b); // true (shallow equality for lists)
 /// print(a.hashCode == b.hashCode); // true
 ///
-/// final c = Equalone({'x': 1, 'y': 2});
-/// final d = Equalone({'x': 1, 'y': 2});
+/// final c = Equalone.deep({'x': 1, 'y': [2,3]});
+/// final d = Equalone.deep({'x': 1, 'y': [2,3]});
 /// print(c == d); // true (deep equality for maps)
 /// ```
 ///
@@ -131,9 +120,9 @@ typedef TestEmpty = bool Function(Object?);
 /// However, avoid comparing regular collections directly to [Equalone],
 /// as this may lead to unexpected or incorrect results:
 /// ```dart
-/// final e = Equalone([1, 2, 3]);
+/// final e = Equalone.shallow([1, 2, 3]);
 /// final f = [1, 2, 3];
-/// print(e == f); // true (deep equality for lists)
+/// print(e == f); // true (shallow equality for lists)
 /// print(f == e); // false
 /// print(e.hashCode == f.hashCode); // false
 /// ```
@@ -143,9 +132,9 @@ typedef TestEmpty = bool Function(Object?);
 /// Although, `hashCode` of [Equalone] with `null` value is equal to `hashCode` of `null`.
 ///
 /// ```dart
-/// final g = Equalone(null);
+/// final g = Equalone.deep(null);
 /// final n = null;
-/// final h = Equalone(n);
+/// final h = Equalone.deep(n);
 ///
 /// print(g == n); // false
 /// print(n == g); // false
@@ -154,253 +143,208 @@ typedef TestEmpty = bool Function(Object?);
 /// print(g.hashCode == h.hashCode); // true
 /// ```
 ///
-/// ### Customization
-/// The `Equalone` class provides customizable equality comparison for its instances.
+/// ### Customized Equalone
+/// The `Equalone` class provides customizable `equality` comparison for its instances.
 ///
-/// Features:
-/// - Use the `equalsMethod` to define a custom logic for comparing two instances of `Equalone`.
-///   This allows you to override the default equality behavior and specify exactly how instances
-///   should be considered equal.
-/// - The `ignoreType` option can be enabled to ignore the runtime type when comparing instances.
-///   - When set to `true`, two objects with the same properties but different types will be considered equal.
-///   - When set to `false`, two objects with the same properties and same type will be considered equal.
+/// Use the `Equalone()` to define a custom logic for comparing.
+/// ```dart
+/// final dcu = Equalone([0,1,2], const DeepCollectionEquality.unordered());
+/// 
+/// print(dcu == [2,1,0]); // true
+/// ```
 ///
-/// Usage:
-/// - Set `equalsMethod` to a function that takes two objects and returns a boolean indicating equality.
-/// - Set `ignoreType` to `false` if you want to compare objects based on their properties and types.
-/// - Use `Equalone.shallow()` or `Equalone.deep()` to create instances with specific equality behavior.
-///
-/// ### Customization Caution
-/// Comparing two [Equalone] instances with different settings (such as different `equalsMethod` or `ignoreType`)
+/// ⚠️ Comparing two [Equalone] instances with different equalities 
 /// may lead to unexpected results. If you compare objects with differing parameters,
 /// the comparison result may be incorrect or asymmetric.
-///
+/// 
+/// ```dart
+/// final i = Equalone.shallow({'a':[0,1]});
+/// final j = Equalone.deep({'a':[0,1]});
+/// 
+/// print(i==j); // false
+/// print(j==i); // true
+/// ```
 /// It is recommended to always use the same settings for [Equalone] instances being compared.
 ///
 /// **Note:** When using the `==` operator, the order of operands matters.
 /// Comparing `EqualoneA == EqualoneB` may produce a different result than `EqualoneB == EqualoneA`.
 /// This is because the equality logic is determined by the left-hand operand.
 ///
-/// ---
 ///
-/// ## Static Methods
-///
-/// The static methods of [Equalone] provide a flexible and type-agnostic way to perform equality
-/// and emptiness checks on any variables.
-///
-/// - [Equalone.equals] — The function used for default equality checks ([deepEquals] by default).
-/// - [Equalone.empty] — The function used to check if a value is considered empty.
-/// - [Equalone.shallowEquals] — The function used for shallow (top-level) equality checks.
-/// - [Equalone.deepEquals] — The function used for deep equality checks.
-///
-/// ### Usage
-/// These methods are especially convenient for working with collections and variables of
-/// unknown or dynamic types, where standard equality or emptiness checks may not be sufficient
-/// or reliable.
-///
-/// The [Equalone.equals] method can be used to compare two objects for equality,
-/// which is useful in scenarios such as:
-/// - Safely comparing variables whose type may not be known at compile time.
-/// - Checking if two collections (e.g., `List`, `Map`, `Set`) contain the same elements, even if nested.
-///
-/// Example:
-/// ```dart
-/// bool areEqual = Equalone.equals(user1, user2);
-/// if (areEqual) {
-///   print('Users are equal');
-/// }
-///
-/// dynamic a = [1, 2, 3];
-/// dynamic b = [1, 2, 3];
-/// if (Equalone.equals(a, b)) {
-///   print('Collections are equal');
-/// }
-/// ```
-///
-/// The [Equalone.empty] method can be used to check if a value is considered "empty".
-/// This is helpful for:
-/// - Filtering out empty values from collections.
-/// - Checking emptiness for variables of unknown or dynamic type (e.g., `String`, `List`, `Iterable`).
-///
-/// Example:
-/// ```dart
-/// dynamic value = [];
-/// if (Equalone.empty(value)) {
-///   print('Value is empty');
-/// }
-/// ```
-///
-/// ### Customization
-/// [Equalone.customize] allows you to globally customize how equality and emptiness are determined.
-/// Call this to override the default equality/emptiness logic globally.
-/// ```dart
-/// Equalone.customize(
-///   equals: const DeepCollectionEquality().equals, // Type-insensitive deep equality
-///   empty: (v) => switch(v) {
-///     num n => n==0,  // Custom empty check for numbers
-///     _ => Equalone.defaultEmpty(v),
-///   },
-/// );
-/// ```
-/// 
-/// Local customization also possible:
-/// 
-/// ```dart
-/// final restore = Equalone.customize(
-///   equals: const DeepCollectionEquality().equals,
-/// );
-/// 
-/// ... Use custom equality logic
-/// 
-/// restore(); // Restore default equality logic
-/// ```
-/// 
 /// {@endtemplate}
 @immutable
 class Equalone<T> {
-  static bool Function(Object? a, Object? b) equals = deepEquals;
-
-  static bool Function(Object? value) empty = defaultEmpty;
-
-  static void Function() customize({
-    TestEquals<Object>? equals,
-    TestEmpty? empty,
-  }) {
-    final backup = (Equalone.equals, Equalone.empty);
-
-    if (equals != null) Equalone.equals = equals;
-    if (empty != null) Equalone.empty = empty;
-    
-    return () {
-      Equalone.equals = backup.$1;
-      Equalone.empty = backup.$2;
-    };
-  }
-
-  @Deprecated('Use `Equalone.customize` instead')
-  static void initialize({TestEquals<Object>? equals, TestEmpty? empty}) =>
-      customize(equals: equals ?? Equalone.equals, empty: empty ?? Equalone.empty);
 
   /// Performs a shallow (top-level) equality check between two objects.
   ///
   /// - For [List], [Map], [Set], and [Iterable], compares only the top-level elements (does not recurse into nested collections).
-  /// - For non-collections, uses the standard `==` operator.
-  /// - Returns true if both objects are identical.
-  /// - If [ignoreType] is true (by default), skips runtime type checking and compares values directly (useful for comparing different but structurally similar types).
-  /// - If [ignoreType] is false, considers the runtime type of both objects and requires them to be the same for equality.
+  /// - Each element is compared using the provided [equality].
+  /// - For non-collections, uses the [equality] parameter.
+  /// - set [unordered] to `true` if the order of elements in collections should be ignored during comparison.
   ///
   /// Use this for fast, top-level comparison where deep (recursive) equality is not required.
-  static bool shallowEquals(Object? a, Object? b, {bool ignoreType = true}) {
+  static bool shallowEquals(Object? a, Object? b, {
+    Equality equality = const DefaultEquality<Never>(), 
+    bool unordered = false
+  }) {
     if (identical(a, b)) return true;
-    return (ignoreType || a.runtimeType == b.runtimeType) &&
-        switch (a) {
-          final List list => b is List? ? const ListEquality().equals(list, b) : false,
-          final Map map => b is Map? ? const MapEquality().equals(map, b) : false,
-          final Set set => b is Set? ? const SetEquality().equals(set, b) : false,
-          final Iterable iterable =>
-            b is Iterable? ? const IterableEquality().equals(iterable, b) : false,
-          final obj => obj == b,
-        };
+    return unordered 
+      ? ShallowCollectionEquality.unordered(equality).equals(a, b) 
+      : ShallowCollectionEquality(equality).equals(a, b);
   }
 
   /// Performs a deep (recursive) equality check between two objects.
   ///
-  /// - Uses [DeepCollectionEquality] from the `collection` package to compare all nested elements and collections.
   /// - Suitable for complex/nested data structures (e.g., nested [List], [Map], [Set], [Iterable]) where all levels must be checked for equality.
-  /// - Returns true if both objects are identical or deeply equal.
-  /// - If [ignoreType] is true (by default), skips runtime type checking and compares values deeply (useful for comparing different but structurally similar types).
-  /// - If [ignoreType] is false, considers the runtime type of both objects and requires them to be the same for equality.
+  /// - Each element is compared using the provided [equality].
+  /// - For non-collections, uses the [equality] parameter.
+  /// - set [unordered] to `true` if the order of elements in collections should be ignored during comparison.
   ///
   /// Use this for thorough, recursive comparison of all nested elements.
-  static bool deepEquals(Object? a, Object? b, {bool ignoreType = true}) {
+  static bool deepEquals(Object? a, Object? b, {
+    Equality equality = const DefaultEquality<Never>(),
+    bool unordered = false    
+  }) {
     if (identical(a, b)) return true;
-    return (ignoreType || a.runtimeType == b.runtimeType) &&
-        const DeepCollectionEquality().equals(a, b);
+    return unordered 
+      ? DeepCollectionEquality.unordered(equality).equals(a, b)
+      : DeepCollectionEquality(equality).equals(a, b);
   }
 
-  static bool defaultEmpty(Object? value) => switch (value) {
-        null => true,
-        final String s => s.isEmpty,
-        final Iterable i => i.isEmpty,
-        final Map m => m.isEmpty,
-        final Equalone e => e.isEmpty,
-        _ => false
-      };
+  /// Checks whether the given value is considered "empty".
+  /// 
+  /// This is helpful for:
+  /// - Filtering out empty values from collections.
+  /// - Checking emptiness for variables of unknown or dynamic type (e.g., `String`, `List`, `Iterable`).
+  static bool empty(Object? value) => const Emptiness().empty(value);
 
-  static int hashCodeBuilder<T>(Object? value, {bool ignoreType = true}) {
-    return switch (value) {
-      final List list => Object.hash((ignoreType ? List : T).hashCode, list.length),
-      final Map map => Object.hash((ignoreType ? Map : T).hashCode, map.length),
-      final Set set => Object.hash((ignoreType ? Set : T).hashCode, set.length),
-      final Iterable _ => (ignoreType ? Iterable : T).hashCode,
-      _ => value.hashCode,
-    };
+  static T valueOf<T>(Object? obj) {
+    while (obj is Equalone) obj = obj.value;
+    return obj as T;
   }
-
+    
   final T value;
-  final bool ignoreType;
-  final TestEquals<Object>? equalsMethod;
-  final HashCodeBuilder<Object>? hashCodeMethod;
+  final Equality equality;
+  @experimental
+  final Emptiness emptiness;
 
-  const Equalone(this.value, {this.equalsMethod, this.hashCodeMethod, this.ignoreType = true});
-  const Equalone.deep(this.value, {this.ignoreType = true}) : equalsMethod = deepEquals, hashCodeMethod = null;
-  const Equalone.shallow(this.value, {this.ignoreType = true}) : equalsMethod = shallowEquals, hashCodeMethod = null;
+  const Equalone(this.value, { 
+    required this.equality,
+    @experimental this.emptiness = const DefaultEmptiness() 
+  });
+  const Equalone.deep(this.value) : equality = const DeepCollectionEquality(), this.emptiness = const DefaultEmptiness();
+  const Equalone.shallow(this.value) : equality = const ShallowCollectionEquality(), this.emptiness = const DefaultEmptiness();
 
-  bool get isEmpty => empty(value);
+  @experimental
+  bool get isEmpty => emptiness(value);
+
+  @experimental
   bool get isNotEmpty => !isEmpty;
-
-  bool testEquals(Object? a, Object? b) => deepEquals(a, b, ignoreType: ignoreType);
-  int getHashCode(T value) => (hashCodeMethod ?? hashCodeBuilder)(value, ignoreType: ignoreType);
-
+  
+  bool equals(Object? other) => call(value, other);
+  
   bool call(Object? a, Object? b) {
-    while (a is Equalone) a = a.value;
-    while (b is Equalone) b = b.value;
-    return equalsMethod != null
-        ? (ignoreType || (a is T && b is T)) && equalsMethod!(a, b)
-        : testEquals(a, b);
+    return equality.equals(valueOf(a), valueOf(b));
   }
-
+ 
   @override
   bool operator ==(Object other) => call(value, other);
-  
+
   @override
-  int get hashCode => getHashCode(value);
+  int get hashCode => equality.hash(valueOf(value));
 }
 
-/// The `PayloadEqualone` class is designed to associate additional payload data (`data`) with a value (`value`)
-/// that is compared using the [Equalone] equality logic.
+
 ///
-/// # Purpose
-/// The main purpose of this class is to bind extra data (`data`) to a value (`value`) that participates in
-/// equality and hashCode calculations via [Equalone]. While equality and hashCode are determined solely by `value`,
-/// the `data` field allows you to attach related information that does not affect comparison.
 ///
-/// # Use Cases
-/// - Attaching metadata or auxiliary information to a value object that is used as a key in collections or for comparison.
-/// - Keeping a reference to the original data or context while using [Equalone] for equality checks.
-/// - Associating additional payloads with values in state management, caching, or mapping scenarios.
 ///
-/// # Examples
-///
-/// ```dart
-/// final user = PayloadEqualone(
-///   123, // value used for equality
-///   data: UserProfile(id: 123, name: 'One'), // keep full profile as payload.
-/// );
-///
-/// final another = PayloadEqualone(123, data: UserProfile(id: 123, name: 'Equ'));
-/// print(user == another); // true, Only the value (123) is used for equality:
-///
-/// print(user.data.name); // 'One', You can still access the associated data
-/// ```
-///
-/// This class is useful when you need to compare objects by a specific value but also need to retain
-/// associated data for further processing or retrieval.
-///
-class PayloadEqualone<T> extends Equalone {
-  final T? data;
-  PayloadEqualone(super.value, {required this.data, super.ignoreType, super.equalsMethod, super.hashCodeMethod});
+class ShallowCollectionEquality implements Equality {
+  final Equality _base;
+  final bool _unordered;
+
+  const ShallowCollectionEquality([Equality base = const DefaultEquality<Never>()])
+      : _base = base,
+        _unordered = false;
+
+  /// Creates a shallow equality on collections where the order of lists and
+  /// iterables are not considered important. 
+  /// Only lists and iterables are treated as unordered iterables.
+  const ShallowCollectionEquality.unordered(
+      [Equality base = const DefaultEquality<Never>()])
+      : _base = base,
+        _unordered = true;
 
   @override
-  String toString() => "${super.toString()}(${data.runtimeType})";
+  bool equals(Object? e1, Object? e2) => 
+    switch(e1) {
+      final Set s1 => e2 is Set && SetEquality(_base).equals(s1, e2),
+      final Map m1 => e2 is Map && MapEquality(values: _base).equals(m1, e2),
+      final List l1 => !_unordered
+        ? e2 is List && ListEquality(_base).equals(l1, e2)
+        : e2 is Iterable && UnorderedIterableEquality(_base).equals(l1, e2),
+      final Iterable i1 => !_unordered
+        ? e2 is Iterable && IterableEquality(_base).equals(i1, e2)
+        : e2 is Iterable && UnorderedIterableEquality(_base).equals(i1, e2),
+      final obj => _base.equals(obj, e2),
+    };
+
+  @override
+  int hash(Object? o) => 
+    switch(o) {
+      final Set s => SetEquality(_base).hash(s),
+      final Map m => MapEquality(values: _base).hash(m),
+      final List l => !_unordered
+        ? ListEquality(_base).hash(l)
+        : UnorderedIterableEquality(_base).hash(l),
+      final Iterable i => !_unordered
+        ? IterableEquality(_base).hash(i)
+        : UnorderedIterableEquality(_base).hash(i),
+      final obj => _base.hash(obj),
+    };
+
+  @override
+  bool isValidKey(Object? o) =>
+      o is Iterable || o is Map || _base.isValidKey(o);
+}
+
+
+///
+///
+///
+abstract class Emptiness {
+  const factory Emptiness() = DefaultEmptiness; 
+  const factory Emptiness.custom(bool Function(Object? value) empty) = CustomEmptiness; 
+  const Emptiness.constructor();
+
+  bool call(Object? value) => empty(value);
+  bool empty(Object? value);
+}
+
+///
+///
+///
+class DefaultEmptiness extends Emptiness {
+  const DefaultEmptiness() : super.constructor();
+
+  @override
+  bool empty(Object? value) => 
+    switch (value) {
+      null => true,
+      final String s => s.isEmpty,
+      final Iterable i => i.isEmpty,
+      final Map m => m.isEmpty,
+      final Equalone e => e.isEmpty,
+      _ => false,
+    };
+}
+
+///
+///
+///
+class CustomEmptiness extends Emptiness {
+  final bool Function(Object? value) _empty;
+  const CustomEmptiness(this._empty) : super.constructor();
+
+  @override
+  bool empty(Object? value) => _empty(value);
 }

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [2.0.0] - 2025-11-25
+### Changed
+- Major refactor of the codebase to better align with the package's goals.
+- Using Equality as the primary mechanism for value comparison
+
 ## [1.2.2] - 2025-08-30
 ### Changed
 - Updated README.md
